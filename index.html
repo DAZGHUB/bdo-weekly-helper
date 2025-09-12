@@ -76,7 +76,7 @@
         
         <!-- Weekly Content Cards - Sunday Reset -->
         <div>
-            <h2 class="section-title">Weekly Reset (Sunday)</h2>
+            <h2 class="section-title">Weekly Reset (Sunday) <span id="sunday-countdown" class="text-sm font-normal text-gray-500"></span></h2>
             <div id="sundayWeeklyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                 <!-- Weekly content (Sunday reset) will be injected here -->
             </div>
@@ -84,7 +84,7 @@
 
         <!-- Weekly Content Cards - Thursday Reset -->
         <div>
-            <h2 class="section-title">Weekly Reset (Thursday)</h2>
+            <h2 class="section-title">Weekly Reset (Thursday) <span id="thursday-countdown" class="text-sm font-normal text-gray-500"></span></h2>
             
             <h3 class="section-title text-xl mt-4">Dungeons</h3>
             <div id="dungeons" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
@@ -210,10 +210,43 @@
             createTaskList('dungeons', dungeons);
             createTaskList('weeklyGrinds', weeklyGrinds);
         }
+        
+        // Updates the countdown timers
+        function updateCountdown() {
+            const now = new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+            // Thursday Countdown
+            const nextThursday = new Date();
+            nextThursday.setDate(now.getDate() + (4 - now.getDay() + 7) % 7);
+            nextThursday.setHours(0, 0, 0, 0);
+            const thursdayDiff = nextThursday.getTime() - now.getTime();
+            const thursdayDays = Math.floor(thursdayDiff / (1000 * 60 * 60 * 24));
+            const thursdayHours = Math.floor((thursdayDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const thursdayMinutes = Math.floor((thursdayDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const thursdaySeconds = Math.floor((thursdayDiff % (1000 * 60)) / 1000);
+            document.getElementById('thursday-countdown').innerHTML = `(Resets in ${thursdayDays}d ${thursdayHours}h ${thursdayMinutes}m ${thursdaySeconds}s)`;
+
+            // Sunday Countdown
+            const nextSunday = new Date();
+            nextSunday.setDate(now.getDate() + (0 - now.getDay() + 7) % 7);
+            nextSunday.setHours(0, 0, 0, 0);
+            const sundayDiff = nextSunday.getTime() - now.getTime();
+            const sundayDays = Math.floor(sundayDiff / (1000 * 60 * 60 * 24));
+            const sundayHours = Math.floor((sundayDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const sundayMinutes = Math.floor((sundayDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const sundaySeconds = Math.floor((sundayDiff % (1000 * 60)) / 1000);
+            document.getElementById('sunday-countdown').innerHTML = `(Resets in ${sundayDays}d ${sundayHours}h ${sundayMinutes}m ${sundaySeconds}s)`;
+        }
 
         // Run auto-reset and then load content
         autoResetWeeklyTasks();
         updateContent();
+        
+        // Initial call to display countdown immediately
+        updateCountdown();
+        // Update countdown every second
+        setInterval(updateCountdown, 1000);
 
         // Add event listeners using event delegation
         document.getElementById('sundayWeeklyContent').addEventListener('click', handleTaskCompletion);
