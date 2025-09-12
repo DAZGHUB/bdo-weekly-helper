@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDO Weekly Content Reset</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .content-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+        .task-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease-in-out, opacity 0.5s ease-in-out;
+            cursor: pointer;
+            text-align: center;
+        }
+        .task-card:hover {
+            transform: translateY(-5px);
+        }
+        .task-card.task-completed {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+        .task-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+        }
+        .task-name {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        .section-title {
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
+
+<div class="max-w-4xl w-full space-y-8">
+    <header class="text-center">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight">BDO Weekly Content</h1>
+        <p class="mt-4 text-xl text-gray-600">Your checklist for weekly tasks. Click a tablet to mark it as done!</p>
+    </header>
+
+    <main class="space-y-12">
+        
+        <!-- Weekly Content Cards - Sunday Reset -->
+        <div>
+            <h2 class="section-title">Weekly Reset (Sunday)</h2>
+            <div id="sundayWeeklyContent" class="content-container">
+                <!-- Weekly content (Sunday reset) will be injected here -->
+            </div>
+        </div>
+
+        <!-- Weekly Content Cards - Thursday Reset -->
+        <div>
+            <h2 class="section-title">Weekly Reset (Thursday)</h2>
+            <div id="thursdayWeeklyContent" class="content-container">
+                <!-- Weekly content (Thursday reset) will be injected here -->
+            </div>
+        </div>
+        
+    </main>
+
+    <div class="text-center pt-8">
+        <button id="resetButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 shadow-lg">Reset All Tasks</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- BDO Weekly Content Data ---
+        // Using objects now to hold both the task name and a unique image seed for placeholders
+        const sundayWeeklyContent = [
+            { name: 'Atoraxxion Dungeon (Postać 1)', image: 'atoraxxion1' },
+            { name: 'Atoraxxion Dungeon (Postać 2)', image: 'atoraxxion2' },
+            { name: 'Red Heart of Garmoth Quest', image: 'garmoth' },
+            { name: 'Pit of the Undying', image: 'undying' },
+            { name: 'Liana\'s Weekly Shop', image: 'liana' }
+        ];
+
+        const thursdayWeeklyContent = [
+            { name: 'Edan\'s / Orzeca\'s Records Bosses', image: 'edan' },
+            { name: 'Weekly Grind: Murrowak\'s Labyrinth', image: 'murrowak' },
+            { name: 'Weekly Grind: Jade Starlight Forest', image: 'jade' },
+            { name: 'Weekly Grind: Erethea\'s Limbo', image: 'limbo' },
+            { name: 'Weekly Fieldboss: Bulgasal', image: 'bulgasal' },
+            { name: 'Weekly Fieldboss: Uturi', image: 'uturi' },
+            { name: 'Weekly Fieldboss: Sangoon', image: 'sangoon' },
+            { name: 'Weekly Fieldboss: Giant Boar', image: 'boar' },
+            { name: 'LOML Party Black Shrine', image: 'shrine1' },
+            { name: 'LOML Solo Black Shrine', image: 'shrine2' }
+        ];
+
+        // --- Logic to create and manage the content ---
+
+        // Helper function to get the week number (not used for logic, but kept for future use)
+        function getWeekNumber(resetDay) {
+            const now = new Date();
+            const startOfYear = new Date(now.getFullYear(), 0, 1);
+            const startDay = startOfYear.getUTCDay();
+            const diff = (startDay > resetDay) ? startDay - resetDay : 7 + startDay - resetDay;
+            const adjustedStart = new Date(startOfYear.getTime());
+            adjustedStart.setDate(startOfYear.getDate() - diff);
+            const weekDiff = Math.floor((now.getTime() - adjustedStart.getTime()) / (1000 * 60 * 60 * 24 * 7));
+            return weekDiff % 7; 
+        }
+
+        // Creates a grid of task cards
+        function createTaskList(containerId, tasks) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Clear existing content
+            tasks.forEach(task => {
+                const isDone = localStorage.getItem(task.name) === 'true';
+
+                const taskCard = document.createElement('div');
+                taskCard.className = `task-card ${isDone ? 'task-completed' : ''}`;
+                taskCard.dataset.taskName = task.name;
+
+                taskCard.innerHTML = `
+                    <img src="https://placehold.co/400x300/${isDone ? '9ca3af' : '4b5563'}/ffffff?text=${encodeURIComponent(task.image)}" alt="${task.name}" class="task-image">
+                    <span class="task-name">${task.name}</span>
+                `;
+                container.appendChild(taskCard);
+            });
+        }
+
+        // Handles the click on a task card
+        function handleTaskCompletion(event) {
+            const card = event.target.closest('.task-card');
+            if (card) {
+                const taskName = card.dataset.taskName;
+                const isDone = card.classList.toggle('task-completed');
+                
+                // Save the status to localStorage
+                localStorage.setItem(taskName, isDone);
+            }
+        }
+
+        // Resets all task cards and localStorage
+        function resetAllTasks() {
+            const allTasks = document.querySelectorAll('.task-card');
+            allTasks.forEach(task => {
+                task.classList.remove('task-completed');
+                const taskName = task.dataset.taskName;
+                localStorage.removeItem(taskName);
+            });
+            // Re-render to update the images and ensure a clean state
+            updateContent();
+        }
+
+        function updateContent() {
+            createTaskList('sundayWeeklyContent', sundayWeeklyContent);
+            createTaskList('thursdayWeeklyContent', thursdayWeeklyContent);
+        }
+
+        // Initial content load
+        updateContent();
+
+        // Add event listeners using event delegation
+        document.getElementById('sundayWeeklyContent').addEventListener('click', handleTaskCompletion);
+        document.getElementById('thursdayWeeklyContent').addEventListener('click', handleTaskCompletion);
+        document.getElementById('resetButton').addEventListener('click', resetAllTasks);
+
+    });
+</script>
+
+</body>
+</html>
