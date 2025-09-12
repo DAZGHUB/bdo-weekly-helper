@@ -66,3 +66,44 @@ body {
     border-radius: 1.5rem;
     background: #c7d2fe;
 }
+
+/* Modal Styles */
+#confirmationModal, #timeInputModal {
+    transition: opacity 0.2s ease-in-out;
+}
+#confirmationModal.hidden, #timeInputModal.hidden {
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* Silver Tracker Styles */
+#silverTracker {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Toggle Switch Styles */
+.toggle-bg {
+    transition: background-color 0.3s ease-in-out;
+}
+.toggle-dot {
+    transition: transform 0.3s ease-in-out;
+}
+input:checked ~ .toggle-bg {
+    background-color: #10B981; /* Green color when checked */
+}
+input:checked ~ .toggle-dot {
+    transform: translateX(1.5rem); /* Moves the dot to the right */
+}
+
+/* Market Panel Styles */
+#marketPanel {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+}
+#marketPanel.open {
+    transform: translateX(0);
+}
+#closeMarketButton {
+    font-size: 2.5rem;
+    line-height: 1;
+}

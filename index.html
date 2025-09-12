@@ -31,12 +31,40 @@
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8 transition-colors duration-300">
 
+<div id="marketPanel" class="fixed top-0 left-0 w-80 h-full bg-white dark:bg-gray-800 shadow-2xl z-[70] p-6">
+    <div class="flex justify-between items-center border-b pb-4 dark:border-gray-600">
+        <h2 class="text-2xl font-bold">Market Prices</h2>
+        <button id="closeMarketButton" class="text-gray-400 hover:text-gray-800 dark:hover:text-white">&times;</button>
+    </div>
+    <div id="marketPanelContent" class="mt-4 space-y-4">
+        </div>
+</div>
+
 <div class="max-w-6xl w-full space-y-8">
     <header class="text-center relative">
         <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight">BDO Weekly Content</h1>
         <p class="mt-4 text-xl text-gray-600 dark:text-gray-400">Your checklist for daily & weekly tasks. Click a card to mark it as done!</p>
         
+        <div id="silverTracker" class="hidden mt-6 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-lg max-w-lg mx-auto">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Tryhard Mode Stats</h3>
+            <div class="flex justify-around mt-2 text-center">
+                <div>
+                    <span class="block text-sm text-gray-500 dark:text-gray-400">Total Silver</span>
+                    <span id="totalSilver" class="block text-2xl font-semibold text-blue-500 dark:text-gray-400">0</span>
+                </div>
+                <div>
+                    <span class="block text-sm text-gray-500 dark:text-gray-400">Silver / Hour</span>
+                    <span id="silverPerHour" class="block text-2xl font-semibold text-green-500">0</span>
+                </div>
+            </div>
+        </div>
+
         <div class="absolute top-0 right-0 flex items-center space-x-2">
+            <button id="marketButton" type="button" class="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white rounded-lg transition-colors" title="Check Market Prices">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            </button>
             <button id="resetOrderButton" type="button" class="p-2 hidden text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white rounded-lg transition-colors" title="Reset to Default Order">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" />
@@ -70,6 +98,10 @@
             <div id="dailyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"></div>
         </div>
         <div>
+            <h2 class="section-title text-2xl font-bold text-gray-900 dark:text-white">Weekly Reset (Monday) <span id="monday-countdown" class="text-base font-normal text-gray-500 dark:text-gray-400"></span></h2>
+            <div id="mondayWeeklyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"></div>
+        </div>
+        <div>
             <h2 class="section-title text-2xl font-bold text-gray-900 dark:text-white">Weekly Reset (Sunday) <span id="sunday-countdown" class="text-base font-normal text-gray-500 dark:text-gray-400"></span></h2>
             <div id="sundayWeeklyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"></div>
         </div>
@@ -88,7 +120,7 @@
 
     <div class="text-center pt-8 space-x-4">
         <button id="installAppButton" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Install App</button>
-        <button id="installAppiOSButton" class="hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Install on this iPhone</button>
+        <button id="installAppiOSButton" class="hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-lg dark:bg-gray-600 dark:hover:bg-gray-500">Install on this iPhone</button>
         <button id="resetButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Reset All Tasks</button>
     </div>
 </div>
@@ -96,18 +128,40 @@
 <div id="settingsModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Customize Visible Tasks</h2>
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Settings</h2>
             <button id="closeModalButton" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-3xl leading-none">&times;</button>
         </div>
         <div id="modalContent" class="p-6 overflow-y-auto space-y-6"></div>
         <div class="p-6 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 rounded-b-2xl text-right">
-            <button id="saveSettingsButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">Save and Close</button>
+            <button id="saveSettingsButton" class="bg-blue-600 hover:bg-blue-700 dark:bg-gray-600 dark:hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg transition duration-300">Save and Close</button>
         </div>
     </div>
 </div>
 <input type="file" id="importFileInput" class="hidden" accept=".json">
 
-<script src="app.js"></script>
+<div id="confirmationModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h3 id="modalTitle" class="text-xl font-bold text-gray-900 dark:text-white">Modal Title</h3>
+        <p id="modalMessage" class="mt-2 text-gray-600 dark:text-gray-300">Modal message goes here.</p>
+        <div id="modalButtons" class="mt-6 flex justify-end space-x-4">
+        </div>
+    </div>
+</div>
+
+<div id="timeInputModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h3 id="timeModalTitle" class="text-xl font-bold text-gray-900 dark:text-white text-center">Enter Time Taken</h3>
+        <div class="mt-4 flex items-center justify-center space-x-2">
+            <input type="number" id="timeMinutes" placeholder="Mins" min="0" class="w-24 text-center p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+            <span class="text-2xl">:</span>
+            <input type="number" id="timeSeconds" placeholder="Secs" min="0" max="59" class="w-24 text-center p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+        </div>
+        <div id="timeModalButtons" class="mt-6 flex justify-end space-x-4">
+        </div>
+    </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
 
 </body>
 </html>
