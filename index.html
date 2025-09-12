@@ -3,7 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BDO Weekly Content Tool</title>
+    <title>BDO Weekly Content Reset</title>
+
+    <!-- PWA Manifest and Meta Tags -->
+    <meta name="theme-color" content="#111827"/>
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/1f2937/ffffff?text=BDO">
+    <link rel="manifest" href="data:application/manifest+json,{
+        &quot;name&quot;: &quot;BDO Weekly Task Tracker&quot;,
+        &quot;short_name&quot;: &quot;BDO Tracker&quot;,
+        &quot;description&quot;: &quot;A checklist for your weekly tasks in Black Desert Online.&quot;,
+        &quot;start_url&quot;: &quot;.&quot;,
+        &quot;display&quot;: &quot;standalone&quot;,
+        &quot;background_color&quot;: &quot;#111827&quot;,
+        &quot;theme_color&quot;: &quot;#111827&quot;,
+        &quot;icons&quot;: [
+            { &quot;src&quot;: &quot;https://placehold.co/192x192/1f2937/ffffff?text=BDO&quot;, &quot;sizes&quot;: &quot;192x192&quot;, &quot;type&quot;: &quot;image/png&quot; },
+            { &quot;src&quot;: &quot;https://placehold.co/512x512/1f2937/ffffff?text=BDO&quot;, &quot;sizes&quot;: &quot;512x512&quot;, &quot;type&quot;: &quot;image/png&quot; }
+        ]
+    }">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // Configure Tailwind to use the 'class' strategy for dark mode
@@ -13,18 +31,15 @@
     </script>
     <!-- Lightweight Drag-and-Drop library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <style>
-        /* Import the custom BDO font */
         @font-face {
             font-family: 'Pearl';
             src: url('https://s1.pearlcdn.com/global_static/font/web/web_pearl_original.ttf') format('truetype');
-            font-weight: normal;
-            font-style: normal;
         }
-
         body {
-            /* Apply the custom font */
-            font-family: 'Pearl', sans-serif;
+            font-family: 'Pearl', 'Inter', sans-serif;
         }
         .task-card {
             position: relative;
@@ -101,7 +116,7 @@
 
 <div class="max-w-6xl w-full space-y-8">
     <header class="text-center relative">
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight">BDO Weekly Content Tool</h1>
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight">BDO Weekly Content</h1>
         <p class="mt-4 text-xl text-gray-600 dark:text-gray-400">Your checklist for weekly tasks. Click a card to mark it as done!</p>
         
         <div class="absolute top-0 right-0 flex items-center space-x-2">
@@ -140,7 +155,8 @@
         </div>
     </main>
 
-    <div class="text-center pt-8">
+    <div class="text-center pt-8 space-x-4">
+        <button id="installAppButton" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Install App</button>
         <button id="resetButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Reset All Tasks</button>
     </div>
 </div>
@@ -178,11 +194,13 @@
         const grindsContainer = document.getElementById('weeklyGrinds');
         const editOrderButton = document.getElementById('editOrderButton');
         const mainContent = document.getElementById('main-content');
+        const installAppButton = document.getElementById('installAppButton');
         
         // --- STATE & DATA ---
         let resetConfirmationTimeout = null;
         let isEditMode = false;
         let sortableInstances = {};
+        let deferredInstallPrompt = null;
         const fullTaskData = {
             sundayWeeklyContent: [
                 { name: 'Vell World Boss', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/vell.png' },
@@ -213,6 +231,33 @@
         };
         const taskContainers = [sundayContainer, dungeonsContainer, grindsContainer];
         
+        // --- PWA Service Worker ---
+        if ('serviceWorker' in navigator) {
+            const serviceWorkerCode = `
+                const CACHE_NAME = 'bdo-weekly-tracker-v1';
+                const urlsToCache = ['./'];
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+                    );
+                });
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request).then(response => {
+                            return response || fetch(event.request);
+                        })
+                    );
+                });
+            `;
+            const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+
+            navigator.serviceWorker.register(swUrl)
+                .then(registration => console.log('Service Worker registered successfully:', registration))
+                .catch(error => console.log('Service Worker registration failed:', error));
+        }
+
+
         // --- FUNCTIONS ---
         
         function updateThemeIcon() {
@@ -249,7 +294,6 @@
         function createTaskList(container, tasks) {
             if (!container) return;
             
-            // Get custom order
             const customOrder = JSON.parse(localStorage.getItem('taskOrder')) || {};
             const categoryOrder = customOrder[container.id];
             
@@ -258,7 +302,6 @@
                 sortedTasks.sort((a, b) => {
                     const indexA = categoryOrder.indexOf(a.name);
                     const indexB = categoryOrder.indexOf(b.name);
-                    // if item is not in order list, push it to the end
                     if (indexA === -1) return 1;
                     if (indexB === -1) return -1;
                     return indexA - indexB;
@@ -285,7 +328,7 @@
         }
 
         function handleTaskCompletion(event) {
-            if (isEditMode) return; // Disable task completion in edit mode
+            if (isEditMode) return;
             const card = event.target.closest('.task-card');
             if (card) {
                 const taskName = card.dataset.taskName;
@@ -403,7 +446,6 @@
             document.getElementById('saveIcon').classList.toggle('hidden', !isEditMode);
 
             if (isEditMode) {
-                // Initialize SortableJS on all containers
                 taskContainers.forEach(container => {
                     sortableInstances[container.id] = new Sortable(container, {
                         animation: 150,
@@ -411,7 +453,6 @@
                     });
                 });
             } else {
-                // Save the new order and destroy SortableJS instances
                 const newOrder = {};
                 taskContainers.forEach(container => {
                     if (sortableInstances[container.id]) {
@@ -420,13 +461,9 @@
                         sortableInstances[container.id].destroy();
                     }
                 });
-                
-                if (Object.keys(newOrder).length > 0) {
-                     localStorage.setItem('taskOrder', JSON.stringify(newOrder));
-                }
-               
+                localStorage.setItem('taskOrder', JSON.stringify(newOrder));
                 sortableInstances = {};
-                updateContent(); // Re-render with the saved order
+                updateContent();
             }
         }
 
@@ -463,6 +500,29 @@
         });
 
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsModal.classList.contains('hidden')) closeModal(); });
+        
+        // PWA Install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            installAppButton.classList.remove('hidden');
+        });
+
+        installAppButton.addEventListener('click', async () => {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                const { outcome } = await deferredInstallPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredInstallPrompt = null;
+                installAppButton.classList.add('hidden');
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+             deferredInstallPrompt = null;
+             installAppButton.classList.add('hidden');
+             console.log('BDO Tracker was installed.');
+        });
         
         // --- INITIAL EXECUTION ---
         updateThemeIcon();
