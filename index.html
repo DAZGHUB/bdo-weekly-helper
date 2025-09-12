@@ -34,9 +34,15 @@
 <div class="max-w-6xl w-full space-y-8">
     <header class="text-center relative">
         <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight">BDO Weekly Content</h1>
-        <p class="mt-4 text-xl text-gray-600 dark:text-gray-400">Your checklist for weekly tasks. Click a card to mark it as done!</p>
+        <p class="mt-4 text-xl text-gray-600 dark:text-gray-400">Your checklist for daily & weekly tasks. Click a card to mark it as done!</p>
         
         <div class="absolute top-0 right-0 flex items-center space-x-2">
+            <button id="resetOrderButton" type="button" class="p-2 hidden text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white rounded-lg transition-colors" title="Reset to Default Order">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 0114.13-6.36M20 15a9 9 0 01-14.13 6.36" />
+                </svg>
+            </button>
             <button id="editOrderButton" type="button" class="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white rounded-lg transition-colors">
                  <svg id="editIcon" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -60,15 +66,23 @@
 
     <main id="main-content" class="space-y-12">
         <div>
+            <h2 class="section-title text-2xl font-bold text-gray-900 dark:text-white">Daily Reset (2am UTC) <span id="daily-countdown" class="text-base font-normal text-gray-500 dark:text-gray-400"></span></h2>
+            <div id="dailyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"></div>
+        </div>
+        <div>
             <h2 class="section-title text-2xl font-bold text-gray-900 dark:text-white">Weekly Reset (Sunday) <span id="sunday-countdown" class="text-base font-normal text-gray-500 dark:text-gray-400"></span></h2>
             <div id="sundayWeeklyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"></div>
         </div>
         <div>
             <h2 class="section-title text-2xl font-bold text-gray-900 dark:text-white">Weekly Reset (Thursday) <span id="thursday-countdown" class="text-base font-normal text-gray-500 dark:text-gray-400"></span></h2>
-            <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-gray-200">Dungeons</h3>
+            <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-gray-200">Bosses</h3>
+            <div id="thursdayBosses" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4"></div>
+            <h3 class="text-xl font-semibold mt-8 text-gray-800 dark:text-gray-200">Shop & Exchange</h3>
+            <div id="thursdayShop" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4"></div>
+            <h3 class="text-xl font-semibold mt-8 text-gray-800 dark:text-gray-200">Dungeons</h3>
             <div id="dungeons" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4"></div>
             <h3 class="text-xl font-semibold mt-8 text-gray-800 dark:text-gray-200">Weekly Grinds</h3>
-            <div id="weeklyGrinds" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4"></div>
+            <div id="thursdayGrinds" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4"></div>
         </div>
     </main>
 

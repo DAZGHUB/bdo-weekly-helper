@@ -11,46 +11,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsButton = document.getElementById('settingsButton');
     const closeModalButton = document.getElementById('closeModalButton');
     const saveSettingsButton = document.getElementById('saveSettingsButton');
-    const sundayContainer = document.getElementById('sundayWeeklyContent');
-    const dungeonsContainer = document.getElementById('dungeons');
-    const grindsContainer = document.getElementById('weeklyGrinds');
     const editOrderButton = document.getElementById('editOrderButton');
+    const resetOrderButton = document.getElementById('resetOrderButton');
     const mainContent = document.getElementById('main-content');
     const importFileInput = document.getElementById('importFileInput');
+
+    // Containers
+    const dailyContainer = document.getElementById('dailyContent');
+    const sundayContainer = document.getElementById('sundayWeeklyContent');
+    const dungeonsContainer = document.getElementById('dungeons');
+    const thursdayBossesContainer = document.getElementById('thursdayBosses');
+    const thursdayShopContainer = document.getElementById('thursdayShop');
+    const thursdayGrindsContainer = document.getElementById('thursdayGrinds');
+
     
     // --- STATE & DATA ---
     let resetConfirmationTimeout = null;
     let isEditMode = false;
     let sortableInstances = {};
     const fullTaskData = {
+        dailyContent: [
+            { name: 'Daily Login Rewards', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Login' },
+            { name: 'Red Battlefield Dailies', image: 'https://placehold.co/300x200/4b5563/ffffff?text=RBF' },
+            { name: 'Claim Loyalties', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Loyalty' },
+        ],
         sundayWeeklyContent: [
-            { name: 'Vell World Boss', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/vell.png' },
-            { name: 'Garmoth World Boss', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/garmoth.png' },
             { name: 'Imperial Crafting Delivery', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/imperial.png' },
+            { name: 'LOML Party Black Shrine', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/loml_party.png' },
+            { name: 'LOML Solo Black Shrine', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Shrine' },
+        ],
+        thursdayBosses: [
+            { name: 'Weekly: Vell', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/vell.png' },
+            { name: 'Weekly: Garmoth', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/garmoth.png' },
+            { name: 'Weekly: Edana Boss', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/edania_bosses.png' },
+            { name: 'Weekly: Pit of the Undying', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/pit.png' },
+            { name: 'Weekly Fieldboss: Bulgasal', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/bulgasal.png' },
+            { name: 'Weekly Fieldboss: Uturi', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/uturi.png' },
+            { name: 'Weekly Fieldboss: Sangoon', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/sangoon.png' },
+            { name: 'Weekly Fieldboss: Golden Pig King', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Pig+King' },
+        ],
+        thursdayShop: [
+            { name: "Liana's Weekly Shop", image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/liana.png' },
         ],
         dungeons: [
             { name: 'Atoraxxion Dungeon (First Run)', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/ato.png' },
             { name: 'Atoraxxion Dungeon (2nd Run)', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/ato.png' },
-            { name: 'Pit of the Undying', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/pit.png' },
-            { name: 'LOML Party Black Shrine', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/loml_party.png' },
-            { name: 'LOML Solo Black Shrine', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Shrine' }
+            { name: 'Weekly: The Final Gladios', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/redheart.png' },
         ],
-        weeklyGrinds: [
-            { name: 'The Final Gladios', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/redheart.png' },
-            { name: 'Liana\'s Weekly Shop', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/liana.png' },
-            { name: 'Edana Boss Fight', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/edania_bosses.png' },
+        thursdayGrinds: [
             { name: 'Weekly Grind: Aetherion Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/aetherion.png' },
             { name: 'Weekly Grind: Nymphamaré Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/nymphamar%C3%A9.png' },
             { name: 'Weekly Grind: Orbita Castle', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Orbita' },
             { name: 'Weekly Grind: Tenebraum Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/Tenebraum.png' },
             { name: 'Weekly Grind: Zephyros Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/Zephyros.png' },
-            { name: 'Weekly Fieldboss: Bulgasal', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/bulgasal.png' },
-            { name: 'Weekly Fieldboss: Uturi', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/uturi.png' },
-            { name: 'Weekly Fieldboss: Sangoon', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/sangoon.png' },
-            { name: 'Weekly Fieldboss: Giant Boar', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Boar' }
         ]
     };
-    const taskContainers = [sundayContainer, dungeonsContainer, grindsContainer];
+    const taskContainers = [dailyContainer, sundayContainer, dungeonsContainer, thursdayBossesContainer, thursdayShopContainer, thursdayGrindsContainer];
     
     // --- PWA Service Worker Registration ---
     if ('serviceWorker' in navigator) {
@@ -72,24 +88,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function autoResetWeeklyTasks() {
+    function autoResetTasks() {
         const now = new Date();
+        const nowUTC = now.getTime();
+
+        // Daily Reset Logic (2am UTC)
+        const lastDailyResetTime = parseInt(localStorage.getItem('lastDailyResetTime') || '0');
+        let nextDailyReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2, 0, 0, 0));
+        if (nowUTC < nextDailyReset.getTime()) {
+            // If it's before 2am today, the last valid reset time was 2am yesterday.
+            nextDailyReset.setUTCDate(nextDailyReset.getUTCDate() - 1);
+        }
+        if (lastDailyResetTime < nextDailyReset.getTime()) {
+            fullTaskData.dailyContent.forEach(task => localStorage.removeItem(task.name));
+            localStorage.setItem('lastDailyResetTime', nextDailyReset.getTime());
+            console.log("Daily tasks have been reset.");
+        }
+
+        // Thursday Reset Logic
+        const lastThursdayResetTime = parseInt(localStorage.getItem('lastThursdayResetTime') || '0');
         const lastThursday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         lastThursday.setUTCDate(lastThursday.getUTCDate() - (lastThursday.getUTCDay() - 4 + 7) % 7);
         lastThursday.setUTCHours(0, 0, 0, 0);
+        if (lastThursdayResetTime < lastThursday.getTime()) {
+            fullTaskData.dungeons.forEach(task => localStorage.removeItem(task.name));
+            fullTaskData.thursdayBosses.forEach(task => localStorage.removeItem(task.name));
+            fullTaskData.thursdayGrinds.forEach(task => localStorage.removeItem(task.name));
+            fullTaskData.thursdayShop.forEach(task => localStorage.removeItem(task.name));
+            localStorage.setItem('lastThursdayResetTime', lastThursday.getTime());
+            console.log("Thursday tasks have been reset.");
+        }
+
+        // Sunday Reset Logic
+        const lastSundayResetTime = parseInt(localStorage.getItem('lastSundayResetTime') || '0');
         const lastSunday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         lastSunday.setUTCDate(lastSunday.getUTCDate() - (lastSunday.getUTCDay() + 7) % 7);
         lastSunday.setUTCHours(0, 0, 0, 0);
-        const lastThursdayResetTime = parseInt(localStorage.getItem('lastThursdayResetTime') || '0');
-        const lastSundayResetTime = parseInt(localStorage.getItem('lastSundayResetTime') || '0');
-        if (lastThursdayResetTime < lastThursday.getTime()) {
-            fullTaskData.dungeons.forEach(task => localStorage.removeItem(task.name));
-            fullTaskData.weeklyGrinds.forEach(task => localStorage.removeItem(task.name));
-            localStorage.setItem('lastThursdayResetTime', lastThursday.getTime());
-        }
         if (lastSundayResetTime < lastSunday.getTime()) {
             fullTaskData.sundayWeeklyContent.forEach(task => localStorage.removeItem(task.name));
             localStorage.setItem('lastSundayResetTime', lastSunday.getTime());
+            console.log("Sunday tasks have been reset.");
         }
     }
 
@@ -163,13 +201,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateContent() {
+        createTaskList(dailyContainer, fullTaskData.dailyContent);
         createTaskList(sundayContainer, fullTaskData.sundayWeeklyContent);
         createTaskList(dungeonsContainer, fullTaskData.dungeons);
-        createTaskList(grindsContainer, fullTaskData.weeklyGrinds);
+        createTaskList(thursdayBossesContainer, fullTaskData.thursdayBosses);
+        createTaskList(thursdayShopContainer, fullTaskData.thursdayShop);
+        createTaskList(thursdayGrindsContainer, fullTaskData.thursdayGrinds);
     }
 
     function updateCountdown() {
         const now = new Date();
+        const nowUTC = now.getTime();
+
+        // Daily Countdown
+        let nextDailyReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2, 0, 0, 0));
+        if (nowUTC >= nextDailyReset.getTime()) {
+            nextDailyReset.setUTCDate(nextDailyReset.getUTCDate() + 1);
+        }
+        const dailyDiff = nextDailyReset.getTime() - nowUTC;
+        const dailyHours = Math.floor((dailyDiff % 86400000) / 3600000);
+        const dailyMinutes = Math.floor((dailyDiff % 3600000) / 60000);
+        const dailySeconds = Math.floor((dailyDiff % 60000) / 1000);
+        document.getElementById('daily-countdown').innerHTML = `(Resets in ${dailyHours}h ${dailyMinutes}m ${dailySeconds}s)`;
+
+
+        // Thursday Countdown
         const nextThursday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         nextThursday.setUTCHours(0, 0, 0, 0);
         nextThursday.setUTCDate(nextThursday.getUTCDate() + (4 - nextThursday.getUTCDay() + 7) % 7);
@@ -183,6 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const thursdaySeconds = Math.floor((thursdayDiff % 60000) / 1000);
         document.getElementById('thursday-countdown').innerHTML = `(Resets in ${thursdayDays}d ${thursdayHours}h ${thursdayMinutes}m ${thursdaySeconds}s)`;
         
+        // Sunday Countdown
         const nextSunday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         nextSunday.setUTCHours(0, 0, 0, 0);
         nextSunday.setUTCDate(nextSunday.getUTCDate() + (7 - nextSunday.getUTCDay()) % 7);
@@ -206,7 +263,12 @@ document.addEventListener('DOMContentLoaded', () => {
         modalContent.innerHTML = '';
         const visibleTasks = getVisibleTasks();
         const categoryTitles = {
-            sundayWeeklyContent: 'Sunday Resets', dungeons: 'Dungeons', weeklyGrinds: 'Weekly Grinds'
+            dailyContent: 'Daily Resets (2am UTC)',
+            sundayWeeklyContent: 'Sunday Resets',
+            thursdayBosses: 'Thursday Resets - Bosses',
+            thursdayShop: 'Thursday Resets - Shop & Exchange',
+            dungeons: 'Thursday Resets - Dungeons',
+            thursdayGrinds: 'Thursday Resets - Grinds'
         };
         for (const category in fullTaskData) {
             if (fullTaskData[category].length === 0) continue;
@@ -258,18 +320,21 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent.classList.toggle('edit-mode', isEditMode);
         document.getElementById('editIcon').classList.toggle('hidden', isEditMode);
         document.getElementById('saveIcon').classList.toggle('hidden', !isEditMode);
+        resetOrderButton.classList.toggle('hidden', !isEditMode);
 
         if (isEditMode) {
             taskContainers.forEach(container => {
-                sortableInstances[container.id] = new Sortable(container, {
-                    animation: 150,
-                    ghostClass: 'sortable-ghost',
-                });
+                if (container) { // Add a check to ensure container exists
+                    sortableInstances[container.id] = new Sortable(container, {
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                    });
+                }
             });
         } else {
             const newOrder = {};
             taskContainers.forEach(container => {
-                if (sortableInstances[container.id]) {
+                if (container && sortableInstances[container.id]) {
                     const cards = container.querySelectorAll('.task-card');
                     newOrder[container.id] = Array.from(cards).map(card => card.dataset.taskName);
                     sortableInstances[container.id].destroy();
@@ -281,6 +346,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    function resetTaskOrder() {
+        localStorage.removeItem('taskOrder');
+        updateContent();
+    }
+
     function exportData() {
         const dataToExport = {};
         const allTaskNames = Object.values(fullTaskData).flat().map(task => task.name);
@@ -367,9 +437,10 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalButton.addEventListener('click', closeModal);
     saveSettingsButton.addEventListener('click', saveSettings);
     editOrderButton.addEventListener('click', toggleEditMode);
+    resetOrderButton.addEventListener('click', resetTaskOrder);
     
     taskContainers.forEach(container => {
-        container.addEventListener('click', handleTaskCompletion)
+        if(container) container.addEventListener('click', handleTaskCompletion);
     });
     
     settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeModal(); });
@@ -468,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- INITIAL EXECUTION ---
     updateThemeIcon();
-    autoResetWeeklyTasks();
+    autoResetTasks();
     updateContent();
     updateCountdown();
     setInterval(updateCountdown, 1000);
