@@ -3,20 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BDO Weekly Content Reset</title>
+    <title>BDO Weekly Content Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+    <script>
+        // Configure Tailwind to use the 'class' strategy for dark mode
+        tailwind.config = {
+            darkMode: 'class',
         }
-        .content-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 2rem;
+    </script>
+    <!-- Lightweight Drag-and-Drop library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        /* Import the custom BDO font */
+        @font-face {
+            font-family: 'Pearl';
+            src: url('https://s1.pearlcdn.com/global_static/font/web/web_pearl_original.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            /* Apply the custom font */
+            font-family: 'Pearl', sans-serif;
         }
         .task-card {
             position: relative;
@@ -24,7 +32,7 @@
             flex-direction: column;
             border-radius: 1.5rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease-in-out, opacity 0.5s ease-in-out;
+            transition: transform 0.3s ease-in-out, opacity 0.5s ease-in-out, background-color 0.3s;
             cursor: pointer;
             text-align: center;
             overflow: hidden;
@@ -38,7 +46,7 @@
         }
         .task-top {
             width: 100%;
-            height: 200px; /* Increased height */
+            height: 200px;
             background-size: cover;
             background-position: center;
             border-top-left-radius: 1.5rem;
@@ -49,213 +57,422 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
-            padding: 0.75rem 0.5rem; /* Reduced padding for a smaller height */
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 0.75rem 0.5rem;
             color: white;
             font-size: 1rem;
             font-weight: 500;
-            transition: background-color 0.5s ease;
+            transition: background-color: 0.5s ease;
         }
-        .section-title {
-            font-weight: 700;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: #1f2937;
+        #settingsModal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        #settingsModal.hidden {
+            pointer-events: none;
+            opacity: 0;
+        }
+        #resetButton {
+            transition: background-color 0.3s ease-in-out;
+        }
+        /* Styles for Edit Mode */
+        .edit-mode .task-card {
+            cursor: grab;
+            border: 2px dashed #3b82f6; /* Blue dashed border */
+        }
+        .edit-mode .task-card:active {
+            cursor: grabbing;
+        }
+        .sortable-ghost {
+            opacity: 0.4;
+            border-radius: 1.5rem;
+            background: #c7d2fe;
         }
     </style>
+    <script>
+        // Set theme on initial load to prevent flashing
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8 transition-colors duration-300">
 
 <div class="max-w-6xl w-full space-y-8">
-    <header class="text-center">
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight">BDO Weekly Content</h1>
-        <p class="mt-4 text-xl text-gray-600">Your checklist for weekly tasks. Click a tablet to mark it as done!</p>
+    <header class="text-center relative">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight">BDO Weekly Content Tool</h1>
+        <p class="mt-4 text-xl text-gray-600 dark:text-gray-400">Your checklist for weekly tasks. Click a card to mark it as done!</p>
+        
+        <div class="absolute top-0 right-0 flex items-center space-x-2">
+            <button id="editOrderButton" type="button" class="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white rounded-lg transition-colors">
+                 <svg id="editIcon" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <svg id="saveIcon" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+            </button>
+            <button id="theme-toggle" type="button" class="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white rounded-lg transition-colors">
+                <svg id="theme-toggle-dark-icon" class="hidden w-7 h-7" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                <svg id="theme-toggle-light-icon" class="hidden w-7 h-7" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.95-2.121a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+            </button>
+            <button id="settingsButton" class="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </div>
     </header>
 
-    <main class="space-y-12">
-        
-        <!-- Weekly Content Cards - Sunday Reset -->
+    <main id="main-content" class="space-y-12">
         <div>
-            <h2 class="section-title">Weekly Reset (Sunday) <span id="sunday-countdown" class="text-sm font-normal text-gray-500"></span></h2>
-            <div id="sundayWeeklyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                <!-- Weekly content (Sunday reset) will be injected here -->
-            </div>
+            <h2 class="section-title text-2xl font-bold text-gray-900 dark:text-white">Weekly Reset (Sunday) <span id="sunday-countdown" class="text-base font-normal text-gray-500 dark:text-gray-400"></span></h2>
+            <div id="sundayWeeklyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"></div>
         </div>
-
-        <!-- Weekly Content Cards - Thursday Reset -->
         <div>
-            <h2 class="section-title">Weekly Reset (Thursday) <span id="thursday-countdown" class="text-sm font-normal text-gray-500"></span></h2>
-            
-            <h3 class="section-title text-xl mt-4">Dungeons</h3>
-            <div id="dungeons" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                <!-- Dungeon content will be injected here -->
-            </div>
-
-            <h3 class="section-title text-xl mt-8">Weekly Grinds</h3>
-            <div id="weeklyGrinds" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                <!-- Weekly Grind content will be injected here -->
-            </div>
+            <h2 class="section-title text-2xl font-bold text-gray-900 dark:text-white">Weekly Reset (Thursday) <span id="thursday-countdown" class="text-base font-normal text-gray-500 dark:text-gray-400"></span></h2>
+            <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-gray-200">Dungeons</h3>
+            <div id="dungeons" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4"></div>
+            <h3 class="text-xl font-semibold mt-8 text-gray-800 dark:text-gray-200">Weekly Grinds</h3>
+            <div id="weeklyGrinds" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4"></div>
         </div>
-        
     </main>
 
     <div class="text-center pt-8">
-        <button id="resetButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 shadow-lg">Reset All Tasks</button>
+        <button id="resetButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Reset All Tasks</button>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Customize Visible Tasks</h2>
+            <button id="closeModalButton" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-3xl leading-none">&times;</button>
+        </div>
+        <div id="modalContent" class="p-6 overflow-y-auto space-y-6"></div>
+        <div class="p-6 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 rounded-b-2xl text-right">
+            <button id="saveSettingsButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">Save and Close</button>
+        </div>
     </div>
 </div>
 
 <script>
+    // Main application logic script
     document.addEventListener('DOMContentLoaded', () => {
-
-        // --- BDO Weekly Content Data ---
-        const sundayWeeklyContent = [];
-
-        const dungeons = [
-            { name: 'Atoraxxion Dungeon (First Run)', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/ato.png' },
-            { name: 'Atoraxxion Dungeon (2nd Run)', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/ato.png' },
-            { name: 'Pit of the Undying', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/pit.png' },
-            { name: 'LOML Party Black Shrine', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/loml_party.png' },
-            { name: 'LOML Solo Black Shrine', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Shrine' }
-        ];
-
-        const weeklyGrinds = [
-            { name: 'The Final Gladios', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/redheart.png' },
-            { name: 'Liana\'s Weekly Shop', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/liana.png' },
-            { name: 'Edana Boss Fight', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/edania_bosses.png' },
-            { name: 'Weekly Grind: Aetherion Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/aetherion.png' },
-            { name: 'Weekly Grind: Nymphamaré Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/nymphamar%C3%A9.png' },
-            { name: 'Weekly Grind: Orbita Castle', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Orbita' },
-            { name: 'Weekly Grind: Tenebraum Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/Tenebraum.png' },
-            { name: 'Weekly Grind: Zephyros Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/Zephyros.png' },
-            { name: 'Weekly Fieldboss: Bulgasal', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/bulgasal.png' },
-            { name: 'Weekly Fieldboss: Uturi', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/uturi.png' },
-            { name: 'Weekly Fieldboss: Sangoon', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/sangoon.png' },
-            { name: 'Weekly Fieldboss: Giant Boar', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Boar' }
-        ];
-
-        // --- Logic to create and manage the content ---
-
-        // Resets tasks if it's a new week
-        function autoResetWeeklyTasks() {
-            const today = new Date();
-            const dayOfWeek = today.getDay(); // Sunday is 0, Thursday is 4
-            const todayDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
-
-            const lastThursdayReset = localStorage.getItem('lastThursdayReset');
-            const lastSundayReset = localStorage.getItem('lastSundayReset');
-
-            if (dayOfWeek === 4 && lastThursdayReset !== todayDate) { // Thursday
-                dungeons.forEach(task => { localStorage.removeItem(task.name); });
-                weeklyGrinds.forEach(task => { localStorage.removeItem(task.name); });
-                localStorage.setItem('lastThursdayReset', todayDate);
-            }
-
-            if (dayOfWeek === 0 && lastSundayReset !== todayDate) { // Sunday
-                sundayWeeklyContent.forEach(task => { localStorage.removeItem(task.name); });
-                localStorage.setItem('lastSundayReset', todayDate);
+        
+        // --- DOM ELEMENT REFERENCES ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        const resetButton = document.getElementById('resetButton');
+        const settingsModal = document.getElementById('settingsModal');
+        const modalContent = document.getElementById('modalContent');
+        const settingsButton = document.getElementById('settingsButton');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const saveSettingsButton = document.getElementById('saveSettingsButton');
+        const sundayContainer = document.getElementById('sundayWeeklyContent');
+        const dungeonsContainer = document.getElementById('dungeons');
+        const grindsContainer = document.getElementById('weeklyGrinds');
+        const editOrderButton = document.getElementById('editOrderButton');
+        const mainContent = document.getElementById('main-content');
+        
+        // --- STATE & DATA ---
+        let resetConfirmationTimeout = null;
+        let isEditMode = false;
+        let sortableInstances = {};
+        const fullTaskData = {
+            sundayWeeklyContent: [
+                { name: 'Vell World Boss', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/vell.png' },
+                { name: 'Garmoth World Boss', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/garmoth.png' },
+                { name: 'Imperial Crafting Delivery', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/imperial.png' },
+            ],
+            dungeons: [
+                { name: 'Atoraxxion Dungeon (First Run)', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/ato.png' },
+                { name: 'Atoraxxion Dungeon (2nd Run)', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/ato.png' },
+                { name: 'Pit of the Undying', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/pit.png' },
+                { name: 'LOML Party Black Shrine', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/loml_party.png' },
+                { name: 'LOML Solo Black Shrine', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Shrine' }
+            ],
+            weeklyGrinds: [
+                { name: 'The Final Gladios', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/redheart.png' },
+                { name: 'Liana\'s Weekly Shop', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/liana.png' },
+                { name: 'Edana Boss Fight', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/edania_bosses.png' },
+                { name: 'Weekly Grind: Aetherion Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/aetherion.png' },
+                { name: 'Weekly Grind: Nymphamaré Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/nymphamar%C3%A9.png' },
+                { name: 'Weekly Grind: Orbita Castle', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Orbita' },
+                { name: 'Weekly Grind: Tenebraum Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/Tenebraum.png' },
+                { name: 'Weekly Grind: Zephyros Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/Zephyros.png' },
+                { name: 'Weekly Fieldboss: Bulgasal', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/bulgasal.png' },
+                { name: 'Weekly Fieldboss: Uturi', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/uturi.png' },
+                { name: 'Weekly Fieldboss: Sangoon', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/sangoon.png' },
+                { name: 'Weekly Fieldboss: Giant Boar', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Boar' }
+            ]
+        };
+        const taskContainers = [sundayContainer, dungeonsContainer, grindsContainer];
+        
+        // --- FUNCTIONS ---
+        
+        function updateThemeIcon() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                themeToggleLightIcon.classList.add('hidden');
+                themeToggleDarkIcon.classList.remove('hidden');
             }
         }
 
-        // Creates a grid of task cards
-        function createTaskList(containerId, tasks) {
-            const container = document.getElementById(containerId);
-            if (!container) {
-                console.error(`Container with ID "${containerId}" not found. Cannot create task list.`);
+        function autoResetWeeklyTasks() {
+            const now = new Date();
+            const lastThursday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            lastThursday.setUTCDate(lastThursday.getUTCDate() - (lastThursday.getUTCDay() - 4 + 7) % 7);
+            lastThursday.setUTCHours(0, 0, 0, 0);
+            const lastSunday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            lastSunday.setUTCDate(lastSunday.getUTCDate() - (lastSunday.getUTCDay() + 7) % 7);
+            lastSunday.setUTCHours(0, 0, 0, 0);
+            const lastThursdayResetTime = parseInt(localStorage.getItem('lastThursdayResetTime') || '0');
+            const lastSundayResetTime = parseInt(localStorage.getItem('lastSundayResetTime') || '0');
+            if (lastThursdayResetTime < lastThursday.getTime()) {
+                fullTaskData.dungeons.forEach(task => localStorage.removeItem(task.name));
+                fullTaskData.weeklyGrinds.forEach(task => localStorage.removeItem(task.name));
+                localStorage.setItem('lastThursdayResetTime', lastThursday.getTime());
+            }
+            if (lastSundayResetTime < lastSunday.getTime()) {
+                fullTaskData.sundayWeeklyContent.forEach(task => localStorage.removeItem(task.name));
+                localStorage.setItem('lastSundayResetTime', lastSunday.getTime());
+            }
+        }
+
+        function createTaskList(container, tasks) {
+            if (!container) return;
+            
+            // Get custom order
+            const customOrder = JSON.parse(localStorage.getItem('taskOrder')) || {};
+            const categoryOrder = customOrder[container.id];
+            
+            let sortedTasks = [...tasks];
+            if (categoryOrder) {
+                sortedTasks.sort((a, b) => {
+                    const indexA = categoryOrder.indexOf(a.name);
+                    const indexB = categoryOrder.indexOf(b.name);
+                    // if item is not in order list, push it to the end
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                });
+            }
+
+            const visibleTasks = getVisibleTasks();
+            const tasksToShow = sortedTasks.filter(task => visibleTasks.includes(task.name));
+            
+            container.innerHTML = '';
+            if (tasksToShow.length === 0 && tasks.length > 0) {
+                 container.innerHTML = `<p class="text-gray-500 dark:text-gray-400 col-span-full">No tasks selected for this section. Click the gear icon to change this.</p>`;
                 return;
             }
-            container.innerHTML = ''; // Clear existing content
-            tasks.forEach(task => {
+
+            tasksToShow.forEach(task => {
                 const isDone = localStorage.getItem(task.name) === 'true';
-
                 const taskCard = document.createElement('div');
-                taskCard.className = `task-card ${isDone ? 'task-completed' : ''}`;
+                taskCard.className = `task-card bg-white dark:bg-gray-800 ${isDone ? 'task-completed' : ''}`;
                 taskCard.dataset.taskName = task.name;
-
-                taskCard.innerHTML = `
-                    <div class="task-top" style="background-image: url('${task.image}');"></div>
-                    <div class="task-bottom">
-                        <span class="task-name">${task.name}</span>
-                    </div>
-                `;
+                taskCard.innerHTML = `<div class="task-top" style="background-image: url('${task.image}');"></div><div class="task-bottom"><span class="task-name">${task.name}</span></div>`;
                 container.appendChild(taskCard);
             });
         }
 
-        // Handles the click on a task card
         function handleTaskCompletion(event) {
+            if (isEditMode) return; // Disable task completion in edit mode
             const card = event.target.closest('.task-card');
             if (card) {
                 const taskName = card.dataset.taskName;
                 const isDone = card.classList.toggle('task-completed');
-                
-                // Save the status to localStorage
                 localStorage.setItem(taskName, isDone);
             }
         }
 
-        // Resets all task cards and localStorage
         function resetAllTasks() {
-            const allTasks = document.querySelectorAll('.task-card');
-            allTasks.forEach(task => {
-                task.classList.remove('task-completed');
-                const taskName = task.dataset.taskName;
-                localStorage.removeItem(taskName);
-            });
-            // Re-render to update the images and ensure a clean state
-            updateContent();
+            if (resetButton.dataset.confirm === 'true') {
+                Object.values(fullTaskData).flat().forEach(task => localStorage.removeItem(task.name));
+                updateContent();
+                resetButton.dataset.confirm = 'false';
+                resetButton.textContent = 'Reset All Tasks';
+                resetButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                resetButton.classList.add('bg-red-500', 'hover:bg-red-600');
+                clearTimeout(resetConfirmationTimeout);
+            } else {
+                resetButton.dataset.confirm = 'true';
+                resetButton.textContent = 'Are you sure? Click again to reset.';
+                resetButton.classList.remove('bg-red-500', 'hover:bg-red-600');
+                resetButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                resetConfirmationTimeout = setTimeout(() => {
+                    resetButton.dataset.confirm = 'false';
+                    resetButton.textContent = 'Reset All Tasks';
+                    resetButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                    resetButton.classList.add('bg-red-500', 'hover:bg-red-600');
+                }, 5000);
+            }
         }
 
         function updateContent() {
-            createTaskList('sundayWeeklyContent', sundayWeeklyContent);
-            createTaskList('dungeons', dungeons);
-            createTaskList('weeklyGrinds', weeklyGrinds);
+            createTaskList(sundayContainer, fullTaskData.sundayWeeklyContent);
+            createTaskList(dungeonsContainer, fullTaskData.dungeons);
+            createTaskList(grindsContainer, fullTaskData.weeklyGrinds);
         }
-        
-        // Updates the countdown timers
+
         function updateCountdown() {
             const now = new Date();
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-            // Thursday Countdown
-            const nextThursday = new Date();
-            nextThursday.setDate(now.getDate() + (4 - now.getDay() + 7) % 7);
-            nextThursday.setHours(0, 0, 0, 0);
+            const nextThursday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            nextThursday.setUTCHours(0, 0, 0, 0);
+            nextThursday.setUTCDate(nextThursday.getUTCDate() + (4 - nextThursday.getUTCDay() + 7) % 7);
+            if (nextThursday.getTime() < now.getTime()) {
+                nextThursday.setUTCDate(nextThursday.getUTCDate() + 7);
+            }
             const thursdayDiff = nextThursday.getTime() - now.getTime();
-            const thursdayDays = Math.floor(thursdayDiff / (1000 * 60 * 60 * 24));
-            const thursdayHours = Math.floor((thursdayDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const thursdayMinutes = Math.floor((thursdayDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const thursdaySeconds = Math.floor((thursdayDiff % (1000 * 60)) / 1000);
+            const thursdayDays = Math.floor(thursdayDiff / 86400000);
+            const thursdayHours = Math.floor((thursdayDiff % 86400000) / 3600000);
+            const thursdayMinutes = Math.floor((thursdayDiff % 3600000) / 60000);
+            const thursdaySeconds = Math.floor((thursdayDiff % 60000) / 1000);
             document.getElementById('thursday-countdown').innerHTML = `(Resets in ${thursdayDays}d ${thursdayHours}h ${thursdayMinutes}m ${thursdaySeconds}s)`;
-
-            // Sunday Countdown
-            const nextSunday = new Date();
-            nextSunday.setDate(now.getDate() + (0 - now.getDay() + 7) % 7);
-            nextSunday.setHours(0, 0, 0, 0);
+            
+            const nextSunday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            nextSunday.setUTCHours(0, 0, 0, 0);
+            nextSunday.setUTCDate(nextSunday.getUTCDate() + (7 - nextSunday.getUTCDay()) % 7);
+             if (nextSunday.getTime() < now.getTime()) {
+                nextSunday.setUTCDate(nextSunday.getUTCDate() + 7);
+            }
             const sundayDiff = nextSunday.getTime() - now.getTime();
-            const sundayDays = Math.floor(sundayDiff / (1000 * 60 * 60 * 24));
-            const sundayHours = Math.floor((sundayDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const sundayMinutes = Math.floor((sundayDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const sundaySeconds = Math.floor((sundayDiff % (1000 * 60)) / 1000);
+            const sundayDays = Math.floor(sundayDiff / 86400000);
+            const sundayHours = Math.floor((sundayDiff % 86400000) / 3600000);
+            const sundayMinutes = Math.floor((sundayDiff % 3600000) / 60000);
+            const sundaySeconds = Math.floor((sundayDiff % 60000) / 1000);
             document.getElementById('sunday-countdown').innerHTML = `(Resets in ${sundayDays}d ${sundayHours}h ${sundayMinutes}m ${sundaySeconds}s)`;
         }
+        
+        function getVisibleTasks() {
+            const stored = localStorage.getItem('visibleTasks');
+            return stored ? JSON.parse(stored) : Object.values(fullTaskData).flat().map(task => task.name);
+        }
 
-        // Run auto-reset and then load content
+        function populateSettingsModal() {
+            modalContent.innerHTML = '';
+            const visibleTasks = getVisibleTasks();
+            const categoryTitles = {
+                sundayWeeklyContent: 'Sunday Resets', dungeons: 'Dungeons', weeklyGrinds: 'Weekly Grinds'
+            };
+            for (const category in fullTaskData) {
+                if (fullTaskData[category].length === 0) continue;
+                const header = document.createElement('div');
+                header.className = 'flex justify-between items-center border-b pb-2 mb-3 dark:border-gray-600';
+                header.innerHTML = `<h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200">${categoryTitles[category]}</h3><div class="flex space-x-4"><button data-action="check" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">Check All</button><button data-action="uncheck" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">Uncheck All</button></div>`;
+                modalContent.appendChild(header);
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2';
+                fullTaskData[category].forEach(task => {
+                    const isChecked = visibleTasks.includes(task.name);
+                    const taskId = task.name.replace(/[^a-zA-Z0-9]/g, '-');
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex items-center';
+                    wrapper.innerHTML = `<input type="checkbox" id="${taskId}" value="${task.name}" ${isChecked ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500 bg-gray-100 dark:bg-gray-600"><label for="${taskId}" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">${task.name}</label>`;
+                    grid.appendChild(wrapper);
+                });
+                modalContent.appendChild(grid);
+            }
+        }
+        
+        function saveSettings() {
+            const checkboxes = modalContent.querySelectorAll('input[type="checkbox"]:checked');
+            const visibleTasks = Array.from(checkboxes).map(cb => cb.value);
+            localStorage.setItem('visibleTasks', JSON.stringify(visibleTasks));
+            closeModal();
+            updateContent();
+        }
+
+        function closeModal() {
+            settingsModal.classList.add('hidden');
+            settingsButton.blur();
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            mainContent.classList.toggle('edit-mode', isEditMode);
+            document.getElementById('editIcon').classList.toggle('hidden', isEditMode);
+            document.getElementById('saveIcon').classList.toggle('hidden', !isEditMode);
+
+            if (isEditMode) {
+                // Initialize SortableJS on all containers
+                taskContainers.forEach(container => {
+                    sortableInstances[container.id] = new Sortable(container, {
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                    });
+                });
+            } else {
+                // Save the new order and destroy SortableJS instances
+                const newOrder = {};
+                taskContainers.forEach(container => {
+                    if (sortableInstances[container.id]) {
+                        const cards = container.querySelectorAll('.task-card');
+                        newOrder[container.id] = Array.from(cards).map(card => card.dataset.taskName);
+                        sortableInstances[container.id].destroy();
+                    }
+                });
+                
+                if (Object.keys(newOrder).length > 0) {
+                     localStorage.setItem('taskOrder', JSON.stringify(newOrder));
+                }
+               
+                sortableInstances = {};
+                updateContent(); // Re-render with the saved order
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            updateThemeIcon();
+        });
+        
+        resetButton.addEventListener('click', resetAllTasks);
+        settingsButton.addEventListener('click', () => {
+            populateSettingsModal();
+            settingsModal.classList.remove('hidden');
+        });
+        closeModalButton.addEventListener('click', closeModal);
+        saveSettingsButton.addEventListener('click', saveSettings);
+        editOrderButton.addEventListener('click', toggleEditMode);
+        
+        taskContainers.forEach(container => {
+            container.addEventListener('click', handleTaskCompletion)
+        });
+        
+        settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeModal(); });
+        
+        modalContent.addEventListener('click', (e) => {
+            const button = e.target.closest('[data-action]');
+            if (!button) return;
+            e.preventDefault();
+            const action = button.dataset.action;
+            const checkboxes = button.closest('.flex').parentElement.nextElementSibling.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = (action === 'check'));
+        });
+
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsModal.classList.contains('hidden')) closeModal(); });
+        
+        // --- INITIAL EXECUTION ---
+        updateThemeIcon();
         autoResetWeeklyTasks();
         updateContent();
-        
-        // Initial call to display countdown immediately
         updateCountdown();
-        // Update countdown every second
         setInterval(updateCountdown, 1000);
-
-        // Add event listeners using event delegation
-        document.getElementById('sundayWeeklyContent').addEventListener('click', handleTaskCompletion);
-        document.getElementById('dungeons').addEventListener('click', handleTaskCompletion);
-        document.getElementById('weeklyGrinds').addEventListener('click', handleTaskCompletion);
-        document.getElementById('resetButton').addEventListener('click', resetAllTasks);
-
     });
 </script>
 
 </body>
 </html>
+
