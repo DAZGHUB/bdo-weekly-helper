@@ -19,13 +19,15 @@
             gap: 2rem;
         }
         .task-card {
-            background-color: white;
-            padding: 1.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
             border-radius: 1.5rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
             transition: transform 0.3s ease-in-out, opacity 0.5s ease-in-out;
             cursor: pointer;
             text-align: center;
+            overflow: hidden;
         }
         .task-card:hover {
             transform: translateY(-5px);
@@ -34,17 +36,25 @@
             opacity: 0.3;
             transform: scale(0.95);
         }
-        .task-image {
+        .task-top {
             width: 100%;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 1rem;
-            margin-bottom: 1rem;
+            height: 200px; /* Increased height */
+            background-size: cover;
+            background-position: center;
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
         }
-        .task-name {
+        .task-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent background */
+            padding: 0.75rem 0.5rem; /* Reduced padding for a smaller height */
+            color: white;
             font-size: 1rem;
             font-weight: 500;
-            color: #1f2937;
+            transition: background-color 0.5s ease;
         }
         .section-title {
             font-weight: 700;
@@ -56,7 +66,7 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
 
-<div class="max-w-4xl w-full space-y-8">
+<div class="max-w-6xl w-full space-y-8">
     <header class="text-center">
         <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight">BDO Weekly Content</h1>
         <p class="mt-4 text-xl text-gray-600">Your checklist for weekly tasks. Click a tablet to mark it as done!</p>
@@ -67,7 +77,7 @@
         <!-- Weekly Content Cards - Sunday Reset -->
         <div>
             <h2 class="section-title">Weekly Reset (Sunday)</h2>
-            <div id="sundayWeeklyContent" class="content-container">
+            <div id="sundayWeeklyContent" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                 <!-- Weekly content (Sunday reset) will be injected here -->
             </div>
         </div>
@@ -75,8 +85,15 @@
         <!-- Weekly Content Cards - Thursday Reset -->
         <div>
             <h2 class="section-title">Weekly Reset (Thursday)</h2>
-            <div id="thursdayWeeklyContent" class="content-container">
-                <!-- Weekly content (Thursday reset) will be injected here -->
+            
+            <h3 class="section-title text-xl mt-4">Dungeons</h3>
+            <div id="dungeons" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                <!-- Dungeon content will be injected here -->
+            </div>
+
+            <h3 class="section-title text-xl mt-8">Weekly Grinds</h3>
+            <div id="weeklyGrinds" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                <!-- Weekly Grind content will be injected here -->
             </div>
         </div>
         
@@ -91,45 +108,61 @@
     document.addEventListener('DOMContentLoaded', () => {
 
         // --- BDO Weekly Content Data ---
-        // Using objects now to hold both the task name and a unique image seed for placeholders
-        const sundayWeeklyContent = [
-            { name: 'Atoraxxion Dungeon (Postać 1)', image: 'atoraxxion1' },
-            { name: 'Atoraxxion Dungeon (Postać 2)', image: 'atoraxxion2' },
-            { name: 'Red Heart of Garmoth Quest', image: 'garmoth' },
-            { name: 'Pit of the Undying', image: 'undying' },
-            { name: 'Liana\'s Weekly Shop', image: 'liana' }
+        const sundayWeeklyContent = [];
+
+        const dungeons = [
+            { name: 'Atoraxxion Dungeon (First Run)', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/ato.png' },
+            { name: 'Atoraxxion Dungeon (2nd Run)', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/ato.png' },
+            { name: 'Pit of the Undying', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/pit.png' },
+            { name: 'LOML Party Black Shrine', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/loml_party.png' },
+            { name: 'LOML Solo Black Shrine', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Shrine' }
         ];
 
-        const thursdayWeeklyContent = [
-            { name: 'Edan\'s / Orzeca\'s Records Bosses', image: 'edan' },
-            { name: 'Weekly Grind: Murrowak\'s Labyrinth', image: 'murrowak' },
-            { name: 'Weekly Grind: Jade Starlight Forest', image: 'jade' },
-            { name: 'Weekly Grind: Erethea\'s Limbo', image: 'limbo' },
-            { name: 'Weekly Fieldboss: Bulgasal', image: 'bulgasal' },
-            { name: 'Weekly Fieldboss: Uturi', image: 'uturi' },
-            { name: 'Weekly Fieldboss: Sangoon', image: 'sangoon' },
-            { name: 'Weekly Fieldboss: Giant Boar', image: 'boar' },
-            { name: 'LOML Party Black Shrine', image: 'shrine1' },
-            { name: 'LOML Solo Black Shrine', image: 'shrine2' }
+        const weeklyGrinds = [
+            { name: 'The Final Gladios', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/redheart.png' },
+            { name: 'Liana\'s Weekly Shop', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/liana.png' },
+            { name: 'Edana Boss Fight', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/edania_bosses.png' },
+            { name: 'Weekly Grind: Aetherion Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/aetherion.png' },
+            { name: 'Weekly Grind: Nymphamaré Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/nymphamar%C3%A9.png' },
+            { name: 'Weekly Grind: Orbita Castle', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Orbita' },
+            { name: 'Weekly Grind: Tenebraum Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/Tenebraum.png' },
+            { name: 'Weekly Grind: Zephyros Castle', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/Zephyros.png' },
+            { name: 'Weekly Fieldboss: Bulgasal', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/bulgasal.png' },
+            { name: 'Weekly Fieldboss: Uturi', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/uturi.png' },
+            { name: 'Weekly Fieldboss: Sangoon', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/sangoon.png' },
+            { name: 'Weekly Fieldboss: Giant Boar', image: 'https://placehold.co/300x200/4b5563/ffffff?text=Boar' }
         ];
 
         // --- Logic to create and manage the content ---
 
-        // Helper function to get the week number (not used for logic, but kept for future use)
-        function getWeekNumber(resetDay) {
-            const now = new Date();
-            const startOfYear = new Date(now.getFullYear(), 0, 1);
-            const startDay = startOfYear.getUTCDay();
-            const diff = (startDay > resetDay) ? startDay - resetDay : 7 + startDay - resetDay;
-            const adjustedStart = new Date(startOfYear.getTime());
-            adjustedStart.setDate(startOfYear.getDate() - diff);
-            const weekDiff = Math.floor((now.getTime() - adjustedStart.getTime()) / (1000 * 60 * 60 * 24 * 7));
-            return weekDiff % 7; 
+        // Resets tasks if it's a new week
+        function autoResetWeeklyTasks() {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // Sunday is 0, Thursday is 4
+            const todayDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            const lastThursdayReset = localStorage.getItem('lastThursdayReset');
+            const lastSundayReset = localStorage.getItem('lastSundayReset');
+
+            if (dayOfWeek === 4 && lastThursdayReset !== todayDate) { // Thursday
+                dungeons.forEach(task => { localStorage.removeItem(task.name); });
+                weeklyGrinds.forEach(task => { localStorage.removeItem(task.name); });
+                localStorage.setItem('lastThursdayReset', todayDate);
+            }
+
+            if (dayOfWeek === 0 && lastSundayReset !== todayDate) { // Sunday
+                sundayWeeklyContent.forEach(task => { localStorage.removeItem(task.name); });
+                localStorage.setItem('lastSundayReset', todayDate);
+            }
         }
 
         // Creates a grid of task cards
         function createTaskList(containerId, tasks) {
             const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Container with ID "${containerId}" not found. Cannot create task list.`);
+                return;
+            }
             container.innerHTML = ''; // Clear existing content
             tasks.forEach(task => {
                 const isDone = localStorage.getItem(task.name) === 'true';
@@ -139,8 +172,10 @@
                 taskCard.dataset.taskName = task.name;
 
                 taskCard.innerHTML = `
-                    <img src="https://placehold.co/400x300/${isDone ? '9ca3af' : '4b5563'}/ffffff?text=${encodeURIComponent(task.image)}" alt="${task.name}" class="task-image">
-                    <span class="task-name">${task.name}</span>
+                    <div class="task-top" style="background-image: url('${task.image}');"></div>
+                    <div class="task-bottom">
+                        <span class="task-name">${task.name}</span>
+                    </div>
                 `;
                 container.appendChild(taskCard);
             });
@@ -172,15 +207,18 @@
 
         function updateContent() {
             createTaskList('sundayWeeklyContent', sundayWeeklyContent);
-            createTaskList('thursdayWeeklyContent', thursdayWeeklyContent);
+            createTaskList('dungeons', dungeons);
+            createTaskList('weeklyGrinds', weeklyGrinds);
         }
 
-        // Initial content load
+        // Run auto-reset and then load content
+        autoResetWeeklyTasks();
         updateContent();
 
         // Add event listeners using event delegation
         document.getElementById('sundayWeeklyContent').addEventListener('click', handleTaskCompletion);
-        document.getElementById('thursdayWeeklyContent').addEventListener('click', handleTaskCompletion);
+        document.getElementById('dungeons').addEventListener('click', handleTaskCompletion);
+        document.getElementById('weeklyGrinds').addEventListener('click', handleTaskCompletion);
         document.getElementById('resetButton').addEventListener('click', resetAllTasks);
 
     });
