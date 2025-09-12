@@ -16,14 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const grindsContainer = document.getElementById('weeklyGrinds');
     const editOrderButton = document.getElementById('editOrderButton');
     const mainContent = document.getElementById('main-content');
-    const installAppButton = document.getElementById('installAppButton');
     const importFileInput = document.getElementById('importFileInput');
     
     // --- STATE & DATA ---
     let resetConfirmationTimeout = null;
     let isEditMode = false;
     let sortableInstances = {};
-    let deferredInstallPrompt = null;
     const fullTaskData = {
         sundayWeeklyContent: [
             { name: 'Vell World Boss', image: 'https://raw.githubusercontent.com/DAZGHUB/bdo-weekly-helper/main/images/vell.png' },
@@ -397,28 +395,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !settingsModal.classList.contains('hidden')) closeModal(); });
     
-    // PWA Install prompt
+    // --- PWA Installation Logic ---
+    const installAppButton = document.getElementById('installAppButton');
+    const installAppiOSButton = document.getElementById('installAppiOSButton');
+    let deferredInstallPrompt = null;
+
+    // --- Utility to detect iOS ---
+    function isIOS() {
+        return [
+            'iPad Simulator',
+            'iPhone Simulator',
+            'iPod Simulator',
+            'iPad',
+            'iPhone',
+            'iPod'
+        ].includes(navigator.platform)
+        // Also, iPad on iOS 13+ detection
+        || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    }
+
+    // --- Check if the app is already in standalone mode ---
+    function isStandalone() {
+        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    }
+
+    // --- PWA Install prompt for Chromium browsers ---
     window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
         e.preventDefault();
+        // Stash the event so it can be triggered later.
         deferredInstallPrompt = e;
-        installAppButton.classList.remove('hidden');
+        // Show the install button if not on iOS and not already standalone
+        if (!isIOS() && !isStandalone()) {
+            installAppButton.classList.remove('hidden');
+        }
     });
 
     installAppButton.addEventListener('click', async () => {
         if (deferredInstallPrompt) {
+            // Show the install prompt
             deferredInstallPrompt.prompt();
+            // Wait for the user to respond to the prompt
             const { outcome } = await deferredInstallPrompt.userChoice;
             console.log(`User response to the install prompt: ${outcome}`);
+            // We've used the prompt, and can't use it again, hide the button
             deferredInstallPrompt = null;
             installAppButton.classList.add('hidden');
         }
     });
+    
+    // --- Manual install instructions for iOS Safari ---
+    function showIosInstallInstructions() {
+        // Here you could show a modal with instructions instead of an alert
+        alert('To install this app on your iPhone: Tap the "Share" icon and then select "Add to Home Screen".');
+    }
+    
+    installAppiOSButton.addEventListener('click', showIosInstallInstructions);
+
 
     window.addEventListener('appinstalled', () => {
          deferredInstallPrompt = null;
          installAppButton.classList.add('hidden');
          console.log('BDO Tracker was installed.');
     });
+
+    // --- Initial check on page load ---
+    function handlePwaInstallPrompts() {
+        if (isIOS() && !isStandalone()) {
+            installAppiOSButton.classList.remove('hidden');
+        }
+    }
     
     // --- INITIAL EXECUTION ---
     updateThemeIcon();
@@ -426,4 +472,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateContent();
     updateCountdown();
     setInterval(updateCountdown, 1000);
+    handlePwaInstallPrompts();
 });

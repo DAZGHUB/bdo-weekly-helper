@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BDO Weekly Content Reset</title>
 
-    <!-- PWA Manifest and Meta Tags -->
     <meta name="theme-color" content="#111827"/>
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/1f2937/ffffff?text=BDO">
+    <link rel="icon" href="https://placehold.co/32x32/1f2937/ffffff?text=BDO">
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,7 +17,6 @@
             darkMode: 'class',
         }
     </script>
-    <!-- Lightweight Drag-and-Drop library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <link rel="stylesheet" href="style.css">
     
@@ -75,11 +74,11 @@
 
     <div class="text-center pt-8 space-x-4">
         <button id="installAppButton" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Install App</button>
+        <button id="installAppiOSButton" class="hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Install on this iPhone</button>
         <button id="resetButton" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">Reset All Tasks</button>
     </div>
 </div>
 
-<!-- Settings Modal -->
 <div id="settingsModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -98,4 +97,3 @@
 
 </body>
 </html>
-
