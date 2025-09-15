@@ -1,9 +1,98 @@
+:root {
+    --debug-bar-height: 28px;
+    --color-bg-primary: #f3f4f6;
+    --color-bg-secondary: #ffffff;
+    --color-bg-tertiary: #f9fafb;
+    --color-text-primary: #1f2937;
+    --color-text-secondary: #4b5563;
+    --color-text-muted: #6b7280;
+    --color-border: #e5e7eb;
+    --color-border-darker: #d1d5db;
+    --color-accent-green: #10b981;
+    --color-accent-red: #ef4444;
+    --color-accent-yellow: #f59e0b;
+    --color-accent-blue: #3b82f6;
+    --color-interactive: #4b5563;
+    --color-interactive-text: #ffffff;
+}
+html.dark {
+    --color-bg-primary: #111111;
+    --color-bg-secondary: #1e1e1e;
+    --color-bg-tertiary: #242424;
+    --color-text-primary: #e8e8e8;
+    --color-text-secondary: #a1a1a1;
+    --color-text-muted: #7d7d7d;
+    --color-border: #3c3c3c;
+    --color-border-darker: #555555;
+    --color-accent-green: #22c55e;
+    --color-accent-red: #ef4444;
+    --color-accent-yellow: #f59e0b;
+    --color-accent-blue: #3b82f6;
+    --color-interactive: #3c3c3c;
+    --color-interactive-text: #ffffff;
+}
 @font-face {
     font-family: 'Pearl';
     src: url('https://s1.pearlcdn.com/global_static/font/web/web_pearl_original.ttf') format('truetype');
 }
 body {
     font-family: 'Pearl', 'Inter', sans-serif;
+}
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+.header-left, .header-right {
+    flex: 1;
+}
+.header-left {
+    display: flex;
+    justify-content: flex-start;
+}
+.header-center {
+    text-align: center;
+}
+.header-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+}
+.premium-status-area {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.premium-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: 1px solid var(--color-border);
+}
+.premium-activation-text {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+}
+body:not(.is-premium) .premium-badge {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+}
+body.is-premium .premium-badge {
+    background-color: #fcd34d;
+    color: #1f2937;
+    border-color: #fcd34d;
+}
+body.is-premium .premium-activation-text {
+    display: none;
 }
 .task-card {
     position: relative;
@@ -15,6 +104,7 @@ body {
     cursor: pointer;
     text-align: center;
     overflow: hidden;
+    background-color: var(--color-bg-secondary);
 }
 .task-card:hover {
     transform: translateY(-5px);
@@ -53,10 +143,9 @@ body {
 #resetButton {
     transition: background-color 0.3s ease-in-out;
 }
-/* Styles for Edit Mode */
 .edit-mode .task-card {
     cursor: grab;
-    border: 2px dashed #3b82f6; /* Blue dashed border */
+    border: 2px dashed var(--color-text-muted);
 }
 .edit-mode .task-card:active {
     cursor: grabbing;
@@ -64,24 +153,18 @@ body {
 .sortable-ghost {
     opacity: 0.4;
     border-radius: 1.5rem;
-    background: #c7d2fe;
+    background: var(--color-border-darker);
 }
-
-/* Modal Styles */
-#confirmationModal, #timeInputModal {
+#confirmationModal, #timeInputModal, #blackShrineModal, #premiumModal {
     transition: opacity 0.2s ease-in-out;
 }
-#confirmationModal.hidden, #timeInputModal.hidden {
+#confirmationModal.hidden, #timeInputModal.hidden, #blackShrineModal.hidden, #premiumModal.hidden {
     pointer-events: none;
     opacity: 0;
 }
-
-/* Silver Tracker Styles */
 #silverTracker {
     transition: all 0.3s ease-in-out;
 }
-
-/* Toggle Switch Styles */
 .toggle-bg {
     transition: background-color 0.3s ease-in-out;
 }
@@ -89,13 +172,18 @@ body {
     transition: transform 0.3s ease-in-out;
 }
 input:checked ~ .toggle-bg {
-    background-color: #10B981; /* Green color when checked */
+    background-color: var(--color-accent-green);
 }
 input:checked ~ .toggle-dot {
-    transform: translateX(1.5rem); /* Moves the dot to the right */
+    transform: translateX(1.5rem);
 }
-
-/* Market Panel Styles */
+#debug-ui {
+    height: var(--debug-bar-height);
+}
+#marketPanel, #fishTrackerPanel {
+    top: var(--debug-bar-height);
+    height: calc(100vh - var(--debug-bar-height));
+}
 #marketPanel {
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
@@ -103,7 +191,136 @@ input:checked ~ .toggle-dot {
 #marketPanel.open {
     transform: translateX(0);
 }
-#closeMarketButton {
+#fishTrackerPanel {
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+}
+#fishTrackerPanel.open {
+    transform: translateX(0);
+}
+#closeMarketButton, #closeFishTrackerButton {
     font-size: 2.5rem;
     line-height: 1;
+}
+.subcategory-title {
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid;
+    margin-top: 2rem;
+    border-color: var(--color-border-darker);
+    color: var(--color-text-primary);
+}
+#blackShrineRewardsList {
+    max-height: 12rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+.shrine-boss-unit {
+    min-height: 130px;
+}
+.shrine-boss-tile {
+    outline: 2px solid transparent;
+    transition: outline-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    cursor: pointer;
+}
+.shrine-boss-unit.selected .shrine-boss-tile {
+    outline-color: var(--color-text-muted);
+    transform: scale(1.03);
+}
+.shrine-boss-unit.disabled .shrine-boss-tile {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.shrine-options-panel {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, padding 0.4s ease-in-out;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+.shrine-boss-unit.selected .shrine-options-panel {
+    max-height: 100px;
+    opacity: 1;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+.shrine-mode-toggle .toggle-circle {
+    transition: transform 0.3s ease-in-out;
+}
+.shrine-mode-toggle input:checked + .toggle-container > .toggle-circle {
+    transform: translateX(1.5rem);
+}
+.shrine-mode-toggle input:checked + .toggle-container {
+    background-color: var(--color-accent-red);
+}
+.history-container {
+    position: relative;
+    flex-grow: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #a1a1aa transparent;
+}
+.dark .history-container {
+    scrollbar-color: #52525b transparent;
+}
+.history-container::before, .history-container::after {
+    content: '';
+    position: sticky;
+    display: block;
+    width: 100%;
+    height: 1.5rem;
+    pointer-events: none;
+}
+.history-container::before {
+    top: 0;
+    background: linear-gradient(to bottom, var(--color-bg-secondary), transparent);
+}
+.history-container::after {
+    bottom: 0;
+    background: linear-gradient(to top, var(--color-bg-secondary), transparent);
+}
+.history-container::-webkit-scrollbar {
+  width: 6px;
+}
+.history-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.history-container::-webkit-scrollbar-thumb {
+  background-color: #a1a1aa;
+  border-radius: 20px;
+}
+.history-container::-webkit-scrollbar-thumb:hover {
+  background-color: #71717a;
+}
+.dark .history-container::-webkit-scrollbar-thumb {
+    background-color: #52525b;
+}
+.dark .history-container::-webkit-scrollbar-thumb:hover {
+    background-color: #71717a;
+}
+.delete-entry-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  border-radius: 99px;
+  opacity: 0.5;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+.delete-entry-btn:hover {
+  opacity: 1;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+#update-button {
+    background-color: var(--color-accent-green);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    cursor: pointer;
+}
+#update-button:hover {
+    filter: brightness(0.9);
 }

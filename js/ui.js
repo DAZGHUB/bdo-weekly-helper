@@ -4,6 +4,15 @@ import { getVisibleTasks } from './state.js';
 import { addTryhardSettings, updateSilverDisplay } from './tryhardUI.js';
 import { addMarketSettings } from './market.js';
 
+const SUBCATEGORY_TITLES = {
+    general: 'General Tasks',
+    bosses: 'Bosses',
+    shop: 'Shop & Exchange',
+    dungeons: 'Dungeons',
+    grinds: 'Weekly Grinds',
+    shrines: 'Black Shrine'
+};
+
 export function updateThemeIcon(darkIcon, lightIcon) {
     if (document.documentElement.classList.contains('dark')) {
         lightIcon.classList.remove('hidden');
@@ -15,8 +24,7 @@ export function updateThemeIcon(darkIcon, lightIcon) {
 }
 
 function createTaskList(container, tasks) {
-    if (!container) return;
-
+    const visibleTasks = getVisibleTasks();
     const customOrder = JSON.parse(localStorage.getItem('taskOrder')) || {};
     const categoryOrder = customOrder[container.id];
     
@@ -25,19 +33,19 @@ function createTaskList(container, tasks) {
         sortedTasks.sort((a, b) => {
             const indexA = categoryOrder.indexOf(a.name);
             const indexB = categoryOrder.indexOf(b.name);
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            return indexA - indexB;
+            return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
         });
     }
 
-    const visibleTasks = getVisibleTasks();
     const tasksToShow = sortedTasks.filter(task => visibleTasks.includes(task.name));
-    
     container.innerHTML = '';
-    if (tasksToShow.length === 0 && tasks.length > 0) {
-         container.innerHTML = `<p class="text-gray-500 dark:text-gray-400 col-span-full">No tasks selected for this section. Click the gear icon to change this.</p>`;
+
+    const parentSection = container.closest('.subcategory-wrapper');
+    if (tasksToShow.length === 0) {
+        if (parentSection) parentSection.classList.add('hidden');
         return;
+    } else {
+         if (parentSection) parentSection.classList.remove('hidden');
     }
 
     tasksToShow.forEach(task => {
@@ -50,14 +58,38 @@ function createTaskList(container, tasks) {
     });
 }
 
+function renderSection(wrapperId, sectionData) {
+    const wrapper = document.getElementById(wrapperId);
+    if (!wrapper) return;
+    wrapper.innerHTML = ''; 
+
+    for (const subcategory in sectionData) {
+        const tasks = sectionData[subcategory];
+        const subcategoryWrapper = document.createElement('div');
+        subcategoryWrapper.className = 'subcategory-wrapper';
+
+        if (Object.keys(sectionData).length > 1 || subcategory !== 'general') {
+            const title = document.createElement('h3');
+            title.className = 'subcategory-title text-xl font-semibold border-b-2 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200';
+            title.textContent = SUBCATEGORY_TITLES[subcategory] || subcategory;
+            subcategoryWrapper.appendChild(title);
+        }
+
+        const gridContainer = document.createElement('div');
+        gridContainer.id = `${wrapperId}-${subcategory}-grid`;
+        gridContainer.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4';
+        subcategoryWrapper.appendChild(gridContainer);
+        
+        wrapper.appendChild(subcategoryWrapper);
+        createTaskList(gridContainer, tasks);
+    }
+}
+
 export function updateContent(containers) {
-    createTaskList(containers.daily, fullTaskData.dailyContent);
-    createTaskList(containers.monday, fullTaskData.mondayWeeklyContent);
-    createTaskList(containers.sunday, fullTaskData.sundayWeeklyContent);
-    createTaskList(containers.dungeons, fullTaskData.dungeons);
-    createTaskList(containers.thursdayBosses, fullTaskData.thursdayBosses);
-    createTaskList(containers.thursdayShop, fullTaskData.thursdayShop);
-    createTaskList(containers.thursdayGrinds, fullTaskData.thursdayGrinds);
+    renderSection('daily-content-wrapper', fullTaskData.daily);
+    renderSection('monday-content-wrapper', fullTaskData.monday);
+    renderSection('sunday-content-wrapper', fullTaskData.sunday);
+    renderSection('thursday-content-wrapper', fullTaskData.thursday);
     updateSilverDisplay();
 }
 
@@ -67,30 +99,36 @@ export function populateSettingsModal(modalContent) {
     addMarketSettings(modalContent);
     addTryhardSettings(modalContent);
 
-    // --- Task Visibility Section ---
     const visibilitySection = document.createElement('div');
     visibilitySection.className = 'border-b pb-6 mb-6 dark:border-gray-600';
     visibilitySection.innerHTML = `<h3 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-3">Customize Visible Tasks</h3>`;
+    modalContent.appendChild(visibilitySection);
 
     const visibleTasks = getVisibleTasks();
     const categoryTitles = {
-        dailyContent: 'Daily Resets (2am UTC)',
-        mondayWeeklyContent: 'Monday Resets',
-        sundayWeeklyContent: 'Sunday Resets',
-        thursdayBosses: 'Thursday Resets - Bosses',
-        thursdayShop: 'Thursday Resets - Shop & Exchange',
-        dungeons: 'Thursday Resets - Dungeons',
-        thursdayGrinds: 'Thursday Resets - Grinds'
+        daily: 'Daily Resets',
+        monday: 'Monday Resets',
+        sunday: 'Sunday Resets',
+        thursday: 'Thursday Resets'
     };
-    for (const category in fullTaskData) {
-        if (!fullTaskData[category] || fullTaskData[category].length === 0) continue;
+
+    for (const categoryKey in categoryTitles) {
         const header = document.createElement('div');
-        header.className = 'flex justify-between items-center border-b pb-2 mb-3 dark:border-gray-600';
-        header.innerHTML = `<h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">${categoryTitles[category]}</h3><div class="flex space-x-4"><button data-action="check" class="text-sm font-medium text-blue-600 dark:text-gray-400 hover:underline">Check All</button><button data-action="uncheck" class="text-sm font-medium text-blue-600 dark:text-gray-400 hover:underline">Uncheck All</button></div>`;
+        header.className = 'flex justify-between items-center mt-4 border-b pb-2 mb-3 dark:border-gray-600';
+        header.innerHTML = `
+            <h4 class="text-lg font-semibold text-gray-700 dark:text-gray-200">${categoryTitles[categoryKey]}</h4>
+            <div class="flex space-x-4">
+                <button data-action="check" class="text-sm font-medium text-blue-600 dark:text-gray-400 hover:underline">Check All</button>
+                <button data-action="uncheck" class="text-sm font-medium text-blue-600 dark:text-gray-400 hover:underline">Uncheck All</button>
+            </div>
+        `;
         visibilitySection.appendChild(header);
+
         const grid = document.createElement('div');
         grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2';
-        fullTaskData[category].forEach(task => {
+        
+        const allTasksInCategory = Object.values(fullTaskData[categoryKey]).flat();
+        allTasksInCategory.forEach(task => {
             const isChecked = visibleTasks.includes(task.name);
             const taskId = task.name.replace(/[^a-zA-Z0-9]/g, '-');
             const wrapper = document.createElement('div');
@@ -100,9 +138,7 @@ export function populateSettingsModal(modalContent) {
         });
         visibilitySection.appendChild(grid);
     }
-    modalContent.appendChild(visibilitySection);
 
-    // --- Data Management Section ---
     const dataManagementSection = document.createElement('div');
     dataManagementSection.className = 'dark:border-gray-600';
     dataManagementSection.innerHTML = `
@@ -129,54 +165,39 @@ export function closeModal(settingsModal, settingsButton) {
 
 export function updateCountdown() {
     const now = new Date();
-    const nowUTC = now.getTime();
+    const options = { month: 'long', day: 'numeric', year: 'numeric' };
 
-    let nextDailyReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2, 0, 0, 0));
-    if (nowUTC >= nextDailyReset.getTime()) {
-        nextDailyReset.setUTCDate(nextDailyReset.getUTCDate() + 1);
-    }
-    const dailyDiff = nextDailyReset.getTime() - nowUTC;
-    const dailyHours = Math.floor((dailyDiff % 86400000) / 3600000);
-    const dailyMinutes = Math.floor((dailyDiff % 3600000) / 60000);
-    const dailySeconds = Math.floor((dailyDiff % 60000) / 1000);
-    document.getElementById('daily-countdown').innerHTML = `(Resets in ${dailyHours}h ${dailyMinutes}m ${dailySeconds}s)`;
-
-    const nextMonday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    nextMonday.setUTCHours(0, 0, 0, 0);
-    nextMonday.setUTCDate(nextMonday.getUTCDate() + (1 - nextMonday.getUTCDay() + 7) % 7);
-    if (nextMonday.getTime() < now.getTime()) {
-        nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
-    }
-    const mondayDiff = nextMonday.getTime() - now.getTime();
-    const mondayDays = Math.floor(mondayDiff / 86400000);
-    const mondayHours = Math.floor((mondayDiff % 86400000) / 3600000);
-    const mondayMinutes = Math.floor((mondayDiff % 3600000) / 60000);
-    const mondaySeconds = Math.floor((mondayDiff % 60000) / 1000);
-    document.getElementById('monday-countdown').innerHTML = `(Resets in ${mondayDays}d ${mondayHours}h ${mondayMinutes}m ${mondaySeconds}s)`;
-
-    const nextThursday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    nextThursday.setUTCHours(0, 0, 0, 0);
-    nextThursday.setUTCDate(nextThursday.getUTCDate() + (4 - nextThursday.getUTCDay() + 7) % 7);
-    if (nextThursday.getTime() < now.getTime()) {
-        nextThursday.setUTCDate(nextThursday.getUTCDate() + 7);
-    }
-    const thursdayDiff = nextThursday.getTime() - now.getTime();
-    const thursdayDays = Math.floor(thursdayDiff / 86400000);
-    const thursdayHours = Math.floor((thursdayDiff % 86400000) / 3600000);
-    const thursdayMinutes = Math.floor((thursdayDiff % 3600000) / 60000);
-    const thursdaySeconds = Math.floor((thursdayDiff % 60000) / 1000);
-    document.getElementById('thursday-countdown').innerHTML = `(Resets in ${thursdayDays}d ${thursdayHours}h ${thursdayMinutes}m ${thursdaySeconds}s)`;
+    let nextDaily = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2, 0, 0, 0));
+    if (now.getTime() >= nextDaily.getTime()) nextDaily.setUTCDate(nextDaily.getUTCDate() + 1);
+    document.getElementById('daily-date').textContent = `Resets on ${nextDaily.toLocaleDateString(undefined, options)}`;
     
-    const nextSunday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    nextSunday.setUTCHours(0, 0, 0, 0);
+    let nextMonday = new Date(now);
+    nextMonday.setUTCDate(nextMonday.getUTCDate() + (1 - nextMonday.getUTCDay() + 7) % 7);
+    nextMonday.setUTCHours(0, 0, 0, 0);
+    if (now.getTime() >= nextMonday.getTime()) nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
+    document.getElementById('monday-date').textContent = `Resets on ${nextMonday.toLocaleDateString(undefined, options)}`;
+    
+    let nextSunday = new Date(now);
     nextSunday.setUTCDate(nextSunday.getUTCDate() + (7 - nextSunday.getUTCDay()) % 7);
-     if (nextSunday.getTime() < now.getTime()) {
-        nextSunday.setUTCDate(nextSunday.getUTCDate() + 7);
-    }
+    nextSunday.setUTCHours(0, 0, 0, 0);
+    if (now.getTime() >= nextSunday.getTime()) nextSunday.setUTCDate(nextSunday.getUTCDate() + 7);
+    document.getElementById('sunday-date').textContent = `Resets on ${nextSunday.toLocaleDateString(undefined, options)}`;
+
+    let nextThursday = new Date(now);
+    nextThursday.setUTCDate(nextThursday.getUTCDate() + (4 - nextThursday.getUTCDay() + 7) % 7);
+    nextThursday.setUTCHours(0, 0, 0, 0);
+    if (now.getTime() >= nextThursday.getTime()) nextThursday.setUTCDate(nextThursday.getUTCDate() + 7);
+    document.getElementById('thursday-date').textContent = `Resets on ${nextThursday.toLocaleDateString(undefined, options)}`;
+    
+    const dailyDiff = nextDaily.getTime() - now.getTime();
+    document.getElementById('daily-countdown').textContent = `(${Math.floor((dailyDiff % 86400000) / 3600000)}h ${Math.floor((dailyDiff % 3600000) / 60000)}m ${Math.floor((dailyDiff % 60000) / 1000)}s)`;
+
+    const mondayDiff = nextMonday.getTime() - now.getTime();
+    document.getElementById('monday-countdown').textContent = `(${Math.floor(mondayDiff / 86400000)}d ${Math.floor((mondayDiff % 86400000) / 3600000)}h ${Math.floor((mondayDiff % 3600000) / 60000)}m)`;
+
     const sundayDiff = nextSunday.getTime() - now.getTime();
-    const sundayDays = Math.floor(sundayDiff / 86400000);
-    const sundayHours = Math.floor((sundayDiff % 86400000) / 3600000);
-    const sundayMinutes = Math.floor((sundayDiff % 3600000) / 60000);
-    const sundaySeconds = Math.floor((sundayDiff % 60000) / 1000);
-    document.getElementById('sunday-countdown').innerHTML = `(Resets in ${sundayDays}d ${sundayHours}h ${sundayMinutes}m ${sundaySeconds}s)`;
+    document.getElementById('sunday-countdown').textContent = `(${Math.floor(sundayDiff / 86400000)}d ${Math.floor((sundayDiff % 86400000) / 3600000)}h ${Math.floor((sundayDiff % 3600000) / 60000)}m)`;
+    
+    const thursdayDiff = nextThursday.getTime() - now.getTime();
+    document.getElementById('thursday-countdown').textContent = `(${Math.floor(thursdayDiff / 86400000)}d ${Math.floor((thursdayDiff % 86400000) / 3600000)}h ${Math.floor((thursdayDiff % 3600000) / 60000)}m)`;
 }

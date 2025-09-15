@@ -1,5 +1,3 @@
-// js/market.js
-
 const API_URL = 'https://api.arsha.io/v2/na/item?id=';
 const CACHE_DURATION_MS = 3600 * 1000; // 1 hour
 const ICON_URL = 'https://s1.pearlcdn.com/NAEU/TradeMarket/Common/img/BDO/item/';
@@ -11,12 +9,12 @@ const itemsToTrack = [
 ];
 
 function getApiUrl() {
-    const region = localStorage.getItem('marketRegion') || 'na'; // Default to NA
+    const region = localStorage.getItem('marketRegion') || 'eu'; // Default to EU - GG's NA (RIP)
     return `https://api.arsha.io/v2/${region}/item?id=`;
 }
 
-async function fetchItemPrice(itemId) {
-    const region = localStorage.getItem('marketRegion') || 'na';
+export async function fetchItemPrice(itemId) {
+    const region = localStorage.getItem('marketRegion') || 'eu';
     const cacheKey = `price_${region}_${itemId}`; // Region-specific cache key
     const cachedItem = JSON.parse(localStorage.getItem(cacheKey));
 

@@ -6,25 +6,20 @@ import { setTryhardMode, clearAllTryhardData } from './tryhardState.js';
 let resetConfirmationTimeout = null;
 
 export function getVisibleTasks() {
-    const allCurrentTaskNames = Object.values(fullTaskData).flat().map(task => task.name);
+    const allCurrentTaskNames = Object.values(fullTaskData).flatMap(Object.values).flat().map(task => task.name);
     const storedVisible = localStorage.getItem('visibleTasks');
 
-    // If the user has never saved settings, all tasks are visible by default
     if (!storedVisible) {
         return allCurrentTaskNames;
     }
 
-    // If they have saved settings, we merge their choices with any new tasks
     const savedVisibleTasks = JSON.parse(storedVisible);
     const allTasksAtLastSave = JSON.parse(localStorage.getItem('allTasksAtLastSave')) || [];
     
-    // "New" tasks are any tasks in the current data that didn't exist when the user last saved
     const newTasks = allCurrentTaskNames.filter(task => !allTasksAtLastSave.includes(task));
 
-    // The final list is a combination of the user's saved preferences and any new tasks
     const finalVisibleTasks = new Set([...savedVisibleTasks, ...newTasks]);
 
-    // We also filter the final list to ensure we don't show tasks that have been removed from the app data
     return allCurrentTaskNames.filter(task => finalVisibleTasks.has(task));
 }
 
@@ -39,7 +34,7 @@ export function autoResetTasks() {
         nextDailyReset.setUTCDate(nextDailyReset.getUTCDate() - 1);
     }
     if (lastDailyResetTime < nextDailyReset.getTime()) {
-        fullTaskData.dailyContent.forEach(task => localStorage.removeItem(task.name));
+        Object.values(fullTaskData.daily).flat().forEach(task => localStorage.removeItem(task.name));
         localStorage.setItem('lastDailyResetTime', nextDailyReset.getTime());
         console.log("Daily tasks have been reset.");
     }
@@ -50,7 +45,7 @@ export function autoResetTasks() {
     lastMonday.setUTCDate(lastMonday.getUTCDate() - (lastMonday.getUTCDay() - 1 + 7) % 7);
     lastMonday.setUTCHours(0, 0, 0, 0);
     if (lastMondayResetTime < lastMonday.getTime()) {
-        fullTaskData.mondayWeeklyContent.forEach(task => localStorage.removeItem(task.name));
+        Object.values(fullTaskData.monday).flat().forEach(task => localStorage.removeItem(task.name));
         localStorage.setItem('lastMondayResetTime', lastMonday.getTime());
         console.log("Monday tasks have been reset.");
     }
@@ -61,12 +56,7 @@ export function autoResetTasks() {
     lastThursday.setUTCDate(lastThursday.getUTCDate() - (lastThursday.getUTCDay() - 4 + 7) % 7);
     lastThursday.setUTCHours(0, 0, 0, 0);
     if (lastThursdayResetTime < lastThursday.getTime()) {
-        const tasksToReset = [
-            ...fullTaskData.dungeons, 
-            ...fullTaskData.thursdayBosses, 
-            ...fullTaskData.thursdayGrinds, 
-            ...fullTaskData.thursdayShop
-        ];
+        const tasksToReset = Object.values(fullTaskData.thursday).flat();
         tasksToReset.forEach(task => localStorage.removeItem(task.name));
         clearAllTryhardData();
         localStorage.setItem('lastThursdayResetTime', lastThursday.getTime());
@@ -79,7 +69,7 @@ export function autoResetTasks() {
     lastSunday.setUTCDate(lastSunday.getUTCDate() - (lastSunday.getUTCDay() + 7) % 7);
     lastSunday.setUTCHours(0, 0, 0, 0);
     if (lastSundayResetTime < lastSunday.getTime()) {
-        fullTaskData.sundayWeeklyContent.forEach(task => localStorage.removeItem(task.name));
+        Object.values(fullTaskData.sunday).flat().forEach(task => localStorage.removeItem(task.name));
         clearAllTryhardData();
         localStorage.setItem('lastSundayResetTime', lastSunday.getTime());
         console.log("Sunday tasks have been reset.");
@@ -88,7 +78,7 @@ export function autoResetTasks() {
 
 export function resetAllTasks(resetButton, updateContentCallback) {
     if (resetButton.dataset.confirm === 'true') {
-        Object.values(fullTaskData).flat().forEach(task => localStorage.removeItem(task.name));
+        Object.values(fullTaskData).flatMap(Object.values).flat().forEach(task => localStorage.removeItem(task.name));
         clearAllTryhardData();
         updateContentCallback();
         resetButton.dataset.confirm = 'false';
@@ -111,22 +101,18 @@ export function resetAllTasks(resetButton, updateContentCallback) {
 }
 
 export function saveSettings(modalContent, closeModalCallback, updateContentCallback) {
-    // Save the user's choices for visible tasks
     const checkboxes = modalContent.querySelectorAll('input[type="checkbox"]:checked');
     const visibleTasks = Array.from(checkboxes).map(cb => cb.value);
     localStorage.setItem('visibleTasks', JSON.stringify(visibleTasks));
 
-    // Save the master list of tasks that existed at the time of saving
-    const allTaskNames = Object.values(fullTaskData).flat().map(task => task.name);
+    const allTaskNames = Object.values(fullTaskData).flatMap(Object.values).flat().map(task => task.name);
     localStorage.setItem('allTasksAtLastSave', JSON.stringify(allTaskNames));
 
-    // Save Tryhard Mode toggle
     const tryhardToggle = document.getElementById('tryhardModeToggle');
     if (tryhardToggle) {
         setTryhardMode(tryhardToggle.checked);
     }
 
-    // Save Market Region
     const regionSelector = modalContent.querySelector('input[name="marketRegion"]:checked');
     if (regionSelector) {
         localStorage.setItem('marketRegion', regionSelector.value);

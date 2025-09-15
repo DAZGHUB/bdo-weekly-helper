@@ -1,19 +1,19 @@
 {
-  "name": "BDO Weekly Task Tracker",
-  "short_name": "BDO Tracker",
+  "name": "Liana's Ledger",
+  "short_name": "LD",
   "description": "A checklist for your weekly tasks in Black Desert Online.",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#111827",
+  //"background_color": "#111827",
+  //"theme_color": "#111827",
   "icons": [
     {
-      "src": "https://placehold.co/192x192/1f2937/ffffff?text=BDO",
+      "src": "images/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://placehold.co/512x512/1f2937/ffffff?text=BDO",
+      "src": "images/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
