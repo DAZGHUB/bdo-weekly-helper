@@ -1,4 +1,4 @@
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.0.1';
 const CACHE_NAME = `bdo-weekly-tracker-${APP_VERSION}`;
 const urlsToCache = [
     './', './index.html', './style.css', './manifest.json',
