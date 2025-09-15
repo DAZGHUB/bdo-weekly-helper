@@ -35,7 +35,7 @@ function initServiceWorker() {
         }
     });
 
-    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
         .then(reg => {
             if (!reg) return;
 
@@ -54,6 +54,8 @@ function initServiceWorker() {
                 if (statusEl) statusEl.textContent = 'App is up to date';
             }
 
+            reg.update();
+
             setInterval(() => {
                 reg.update();
             }, 1000 * 60 * 30);
@@ -63,8 +65,6 @@ function initServiceWorker() {
                     reg.update();
                 }
             });
-
-            reg.update();
         })
         .catch(error => console.error('Service Worker registration failed:', error));
 
